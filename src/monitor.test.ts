@@ -108,6 +108,33 @@ test('concurrent verifications share one run; a later call starts a fresh one', 
   assert.equal(runs, 2);
 });
 
+test('a verification requested after a publish never reuses a run that began before that publish finished', async () => {
+  const { lnd } = stubLnd();
+  let calls = 0;
+  const verifyFn = async () => {
+    const n = ++calls;
+    if (n === 1) await sleep(200); // the run that is in flight while the publish happens
+    return okVerify({ channelsCurrent: n });
+  };
+  const { m } = mk(lnd, { verifyFn });
+  await m.start();
+  const before = calls;
+  const a = m.verifyNow(); // begins now
+  await sleep(20);
+  assert.equal(calls, before + 1, 'the first run is in flight');
+  await m.backup.publishNow(); // completes while that run is still going
+  const b = m.verifyNow();
+  const [ra, rb] = await Promise.all([a, b]);
+  assert.equal(calls, before + 2, 'a second, fresh run was made');
+  assert.notEqual(rb.channelsCurrent, ra.channelsCurrent, 'the answer after the publish is not the answer that predates it');
+  assert.equal(rb.channelsCurrent, before + 2);
+  // and two callers with no publish in between still share one run
+  const c = m.verifyNow();
+  const d = m.verifyNow();
+  assert.equal(await c, await d);
+  assert.equal(calls, before + 3);
+});
+
 test('a failing verification is reported to every waiting caller and does not wedge later ones', async () => {
   const { lnd } = stubLnd();
   let fail = false;

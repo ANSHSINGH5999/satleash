@@ -2,7 +2,7 @@
 
 Run on 2026-09-19 (macOS, Node 26.7, Docker, headless Chrome, LND 0.20.0-beta, bitcoind 30 regtest). "Actual" is what was observed. Every PASS names its evidence: an automated test (file in `src/`), an e2e check against real LND (`npm run e2e`, 44 checks), or a manual run recorded in `FINAL_PROJECT_STATUS.md`.
 
-Suite: **158 tests in 22 files, 158 pass** (`npm run check`); **44 of 44 e2e checks**; `npm audit` 0 vulnerabilities.
+Suite: **159 tests in 22 files, 159 pass** (`npm run check`); **44 of 44 e2e checks**; `npm audit` 0 vulnerabilities.
 
 ## Disaster scenarios
 

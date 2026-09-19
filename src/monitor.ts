@@ -57,6 +57,8 @@ export class Monitor {
   private inflight?: Promise<VerifyResult>;
   private stopped = true;
   private healing = false;
+  private lastPublishAt = 0;
+  private inflightStartedAt = 0;
 
   constructor(private o: MonitorOpts) {
     this.relays = o.relays instanceof RelaySet ? o.relays : new RelaySet(o.relays);
@@ -68,7 +70,10 @@ export class Monitor {
       refreshMs: o.refreshMs,
       retryMs: o.retryMs,
       // verify shortly after each publish so the dashboard reflects the new state without waiting for the next tick
-      onPublish: () => this.scheduleVerify(1500),
+      onPublish: () => {
+        this.lastPublishAt = Date.now();
+        this.scheduleVerify(1500);
+      },
     });
     // a relay added or enabled at runtime should receive the current backup, and the health view should catch up
     this.relays.onChange(() => {
@@ -126,9 +131,17 @@ export class Monitor {
     this.verifyTimer = setTimeout(() => void this.verifyNow().catch(() => undefined), ms);
   }
 
-  /** Single-flight: concurrent callers share one verification instead of probing every relay several times. */
+  /**
+   * Single-flight: concurrent callers share one verification instead of probing every relay several times. A run that
+   * began before the latest publish finished is not shared with a later caller, because its answer may predate that
+   * publish: the caller waits for it, then gets a fresh run.
+   */
   verifyNow(): Promise<VerifyResult> {
-    if (this.inflight) return this.inflight;
+    if (this.inflight) {
+      if (this.inflightStartedAt >= this.lastPublishAt) return this.inflight;
+      return this.inflight.then(() => this.verifyNow(), () => this.verifyNow());
+    }
+    this.inflightStartedAt = Date.now();
     const run = async () => {
       const began = this.backup.beginVerify();
       try {

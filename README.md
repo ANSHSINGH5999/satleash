@@ -78,7 +78,7 @@ Without Docker, `npm run demo` and `npm run playground` stop within 15 s with on
 ```bash
 git clone [GitHub URL — TO BE ADDED] lifeboat && cd lifeboat
 npm install
-npm run check          # typecheck + 158 unit and browser tests
+npm run check          # typecheck + 159 unit and browser tests
 ```
 
 `npm run check` needs no Docker. Chrome is found automatically on macOS and Linux; set `CHROME_PATH` otherwise (browser tests are skipped if none is found).
@@ -120,7 +120,7 @@ Variables are listed in [.env.example](.env.example). There is no build step and
 ## Testing
 
 ```bash
-npm run check    # typecheck + 158 tests (no Docker)
+npm run check    # typecheck + 159 tests (no Docker)
 npm run e2e      # 44 checks against real LND nodes on regtest (Docker, a few minutes)
 npm audit        # 0 vulnerabilities on 2026-09-19
 ```

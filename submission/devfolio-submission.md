@@ -101,4 +101,4 @@ Chunked backups for large nodes; a multi-week public-relay retention test; a tes
 ## Evidence (measured)
 
 - Recovery drill, 2026-09-19: 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 37.9 s for the whole drill (24.3 s from wipe to funds back), with one of two relays switched off during the restore
-- Tests: 158 unit, integration and browser tests pass; 44 real-LND end-to-end checks pass; `npm audit` reports 0 vulnerabilities
+- Tests: 159 unit, integration and browser tests pass; 44 real-LND end-to-end checks pass; `npm audit` reports 0 vulnerabilities

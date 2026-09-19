@@ -5,7 +5,7 @@ Release candidate for a **future** publication. This phase is local only: nothin
 | Done | Item | Result |
 |---|---|---|
 | [x] | `npm ci` | completed without errors (2026-09-20) |
-| [x] | `npm run check` | typecheck clean, **158 / 158** tests pass in 22 files |
+| [x] | `npm run check` | typecheck clean, **159 / 159** tests pass in 22 files |
 | [x] | `npm run e2e` | **44 / 44** checks against real LND regtest nodes |
 | [x] | `npm audit` | 0 vulnerabilities |
 | [x] | Chrome demo | landing page and live drill in a fresh Chrome profile, extensions disabled: passed, 0 console errors or warnings |

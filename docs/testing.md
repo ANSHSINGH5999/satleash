@@ -12,7 +12,7 @@
 
 ## Counts (2026-09-19)
 
-`npm run check`: typecheck clean, **158 tests, 158 pass**, 0 skipped (22 test files). `npm run e2e`: 44 of 44 checks, run on real LND 0.20.0-beta / bitcoind 30 regtest. `npm audit`: 0 vulnerabilities. At the start of the previous hardening pass the suite had 67 tests and the e2e 24 checks.
+`npm run check`: typecheck clean, **159 tests, 159 pass**, 0 skipped (22 test files). `npm run e2e`: 44 of 44 checks, run on real LND 0.20.0-beta / bitcoind 30 regtest. `npm audit`: 0 vulnerabilities. At the start of the previous hardening pass the suite had 67 tests and the e2e 24 checks.
 
 Fake LND and fake publishers (`testutil.ts`) mimic the real behaviours that broke earlier code (LND re-encrypts the backup on every export). Bugs found only on real LND are listed in `FINAL_PROJECT_STATUS.md`. Browser tests drive headless Chrome over the DevTools protocol; only Chrome has been verified.
 

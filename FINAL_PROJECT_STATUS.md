@@ -9,7 +9,7 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Item | Status |
 |---|---|
 | Local commit | `feat: freeze Lifeboat hackathon release candidate` (local only; hash in `git log`; a follow-up docs commit records the clean-clone result) |
-| Tests | `npm run check`: typecheck clean, **158 / 158** pass (22 files); 2026-09-20 after a fresh `npm ci` |
+| Tests | `npm run check`: typecheck clean, **159 / 159** pass (22 files); 2026-09-20 after a fresh `npm ci` |
 | E2E | **44 / 44** real-LND checks (regtest, Docker) |
 | Benchmark | Freeze run through the UI: **37.6 s** total, **24.0 s** wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees, relays 2/0 accepted, 1 of 2 reachable at restore, verification verified. Known benchmark 37.9 s / 24.3 s and earlier range 37.1 to 40.9 s: **no material difference** |
 | Browser | **Chrome verified** (headless, fresh profile, 0 console errors). Firefox and Safari **not tested**, no support claimed |
@@ -19,7 +19,7 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Hosting | **NOT HOSTED**; no deployment configuration exists |
 | Devfolio | **NOT SUBMITTED** |
 
-Found and fixed in this phase: `demo:reset` waited on a hung `docker` for as long as it hung (now bounded to 15 s, and its logic is testable against a temporary directory); the LICENSE choice was left to the owner (`docs/license-decision.md` is a comparison table only). Checklist: `docs/local-release-checklist.md`.
+Found and fixed in this phase: the `verifyNow` race above (found by the clean-clone e2e run); `demo:reset` waited on a hung `docker` for as long as it hung (now bounded to 15 s, and its logic is testable against a temporary directory); the LICENSE choice was left to the owner (`docs/license-decision.md` is a comparison table only). Checklist: `docs/local-release-checklist.md`.
 
 ## A. Current status
 
@@ -28,7 +28,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Check | Result |
 |---|---|
 | `npm install` | completed without errors |
-| `npm run check` (typecheck + tests) | clean; **158 / 158 tests pass** in 22 files |
+| `npm run check` (typecheck + tests) | clean; **159 / 159 tests pass** in 22 files |
 | `npm run e2e` (real LND, regtest) | **44 / 44 checks** |
 | `npm audit` | **0 vulnerabilities** |
 | Build / lint | none exist; `npm run typecheck` is the compile check |
@@ -41,7 +41,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 
 | | Start of hardening | End of previous pass | Now |
 |---|---|---|---|
-| Unit and browser tests | 67 | 133 | **158** |
+| Unit and browser tests | 67 | 133 | **159** |
 | Real-LND e2e checks | 24 | 41 | **44** |
 | Recovery drill | 2 channels, 1 relay | same | 2 channels, **2 relays, one switched off during restore** |
 
@@ -67,6 +67,7 @@ This pass:
 | Low | CLI errors were raw (`connect ECONNREFUSED`) | Cause and action shown, exit codes tested | `cli.test.ts` |
 | Low | Drill in a repository Docker cannot bind-mount failed with "timeout waiting for genseed" | Clear message naming the cause | `demo-env.test.ts`, manual |
 | Low | Drill used one relay, so redundancy was not shown | Two relays, one switched off during restore | drill runs |
+| Medium | `Monitor.verifyNow()` could hand a caller the result of a verification that began before the latest publish finished (surfaced as one flaky e2e check, "the next publish heals the relay", in the clean-clone run); it could also trigger a needless republish | A run that predates the latest publish is not shared: the caller waits for it, then gets a fresh run | `monitor.test.ts` |
 
 ## D. Features added this pass
 
@@ -78,7 +79,7 @@ Listed with tests in `docs/security-architecture.md` and `docs/security.md`; thr
 
 ## F. Tests
 
-158 tests (22 files) and 44 e2e checks; see `docs/test-matrix.md` for the 20 disaster scenarios, each with expected, actual and evidence.
+159 tests (22 files) and 44 e2e checks; see `docs/test-matrix.md` for the 20 disaster scenarios, each with expected, actual and evidence.
 
 ## G. Real-LND results
 
@@ -140,7 +141,7 @@ Restore closes channels and needs peers online; about 200 channels per backup; L
 
 ```bash
 npm install
-npm run check                       # typecheck + 158 tests
+npm run check                       # typecheck + 159 tests
 npm run web                         # landing + live drill, http://127.0.0.1:8080 (Docker)
 npm run playground                  # regtest + console at /console
 npm run playground:open -- 250000

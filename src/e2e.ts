@@ -98,7 +98,7 @@ async function main() {
   await sleep(1200); // the healing publish must be dated after the corrupted event
   await monitor.backup.publishNow();
   const v3 = await monitor.verifyNow();
-  check(v3.ok && v3.relays.every((r) => r.hasLatest), 'the next publish heals the relay');
+  check(v3.ok && v3.relays.every((r) => r.hasLatest), 'the next publish heals the relay', JSON.stringify({ ok: v3.ok, problems: v3.problems, relays: v3.relays.map((r) => [r.state, r.hasLatest, r.createdAt]) }));
 
   section('lnd rejects a relay copy it cannot decrypt');
   await sleep(1300); // events are dated in whole seconds: make the corrupted one strictly newer than the last real publish

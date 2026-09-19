@@ -6,19 +6,18 @@ Recorded 2026-09-19 to 2026-09-20. Environment: macOS 26.6.2, Node v26.7.0, npm 
 
 ```
 $ npm ci
-added packages, no errors (exit 0)
 $ npm run check
-ℹ tests 158
+ℹ tests 159
 ℹ suites 0
-ℹ pass 158
+ℹ pass 159
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 31986.641417
+ℹ duration_ms 32099.449583
 ```
 
-158 test cases passed, 0 failed, 0 skipped, in 22 test files (tests per file):
+159 test cases passed, 0 failed, 0 skipped, in 22 test files (tests per file):
 
 ```
  17 src/backup.test.ts
@@ -32,7 +31,7 @@ $ npm run check
   2 src/keys.test.ts
  14 src/lnd.test.ts
   3 src/log.test.ts
- 10 src/monitor.test.ts
+ 11 src/monitor.test.ts
   7 src/nostr.test.ts
   6 src/payload.test.ts
   1 src/regtest.test.ts
@@ -46,6 +45,8 @@ $ npm run check
 ```
 
 ## npm run e2e, npm audit, npm run typecheck (real LND nodes, regtest)
+
+Three consecutive e2e runs passed 44/44 after the `verifyNow` fix (one earlier run, in a fresh clone, had failed one check); the output below is the third.
 
 ```
 $ npm run e2e
@@ -101,11 +102,10 @@ PASS  cli relay-test refuses to publish anything without --yes
 PASS  cli relay-test --yes publishes a dummy event, reads it back and deletes it
 
 == lnd outage and recovery
-2026-09-19T19:07:50.216Z ERROR backup verification could not run {"category":"verify","error":"socket hang up"}
+2026-09-19T19:31:39.280Z ERROR backup verification could not run {"category":"verify","error":"connect ECONNREFUSED 127.0.0.1:8081"}
 PASS  the dashboard shows lnd as unreachable and the lnd check FAILED
 PASS  overall status is FAILED while lnd is down
-2026-09-19T19:07:51.725Z ERROR backup verification could not run {"category":"verify","error":"GET /v1/channels/backup -> 500: {\"code\":2,\"message\":\"wallet locked, unlock it to enable full RPC access\",\"details\":[]}"}
-2026-09-19T19:07:53.221Z ERROR backup verification could not run {"category":"verify","error":"GET /v1/channels/backup -> 500: {\"code\":2,\"message\":\"the RPC server is in the process of starting up, but not yet ready to accept calls\",\"details\":[]}"}
+2026-09-19T19:31:40.781Z ERROR backup verification could not run {"category":"verify","error":"GET /v1/channels/backup -> 500: {\"code\":2,\"message\":\"wallet locked, unlock it to enable full RPC access\",\"details\":[]}"}
 PASS  after lnd returns the monitor reconnects on its own and verification passes
 PASS  the backup stream resubscribed and the pipeline never left the state machine
 
