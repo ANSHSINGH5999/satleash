@@ -136,11 +136,11 @@ recovered 1492866 of 1493060 channel sats on-chain
 metrics: {"backupBytes":1811,"publishMs":10,"discoverMs":24,"importMs":85,"redialMs":15045,"exportMs":13,"encryptMs":5.53,"verifyMs":41,"relaysHealthy":2,"relaysAtRestore":1,"recoveryMs":24277,"totalMs":37894,"relaysOk":2,"relaysFailed":0,"feesSats":194}
 ```
 
-Across the drill runs recorded that day (nine, counting three started from the landing page in headless Chrome and one from a fresh clone) the total ranged from 37.1 s to 40.9 s; every run recovered 1,492,866 of 1,493,060 sats with 194 sats in fees. The 15 s `redialMs` is a fixed schedule (5 rounds of 3 s), not measured work.
+Across the drill runs recorded that day (ten, counting three started from the landing page in headless Chrome and two from fresh clones) the total ranged from 36.9 s to 40.9 s; every run recovered 1,492,866 of 1,493,060 sats with 194 sats in fees. The 15 s `redialMs` is a fixed schedule (5 rounds of 3 s), not measured work.
 
 ## Release-freeze drill, through the UI (2026-09-20)
 
-Started with `npm run demo:reset` then `npm run web`; driven in headless Chrome with a brand-new profile (extensions disabled, empty storage) by pressing the page's own button; numbers read from the page. Benchmark for comparison: 37.9 s total, 24.3 s wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees. This run: 37.6 s and 24.0 s with identical sats and fees, within the earlier 37.1 to 40.9 s range.
+Started with `npm run demo:reset` then `npm run web`; driven in headless Chrome with a brand-new profile (extensions disabled, empty storage) by pressing the page's own button; numbers read from the page. Benchmark for comparison: 37.9 s total, 24.3 s wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees. This run: 37.6 s and 24.0 s with identical sats and fees, within the earlier 36.9 to 40.9 s range.
 
 ```
 landing: {"title":"Lifeboat — Back up, verify, recover your Lightning node","h1":"Back up your node. Verify. Recover.","cta":["Run recovery drill","View architecture"],"localStorageKeys":0}
@@ -168,6 +168,12 @@ docker hangs: demo:reset  -> bounded to 15 s (it waited 61 s before the fix)
 not installed: demo / playground / demo:reset -> same lines as above
 web, daemon down: GET /api/status -> {"busy":false,"dockerOk":false,"drill":true}; POST /api/run -> "Docker isn't running. Start Docker Desktop and try again." (HTTP 503)
 ```
+
+## Clean-clone verification (local `git clone`, 2026-09-20)
+
+First clone, of `3f4f096`: tree identical, `npm ci`, 158 / 158 tests, audit 0, README demo commands worked, e2e **43 / 44**: "the next publish heals the relay" failed. Root cause: `Monitor.verifyNow()` could join a verification that began before the latest publish finished and return its stale answer. Fixed in `024e71a` with a regression test.
+
+Second clone, of `024e71a`: tree identical, `npm ci`, 159 / 159 tests, `npm audit` 0 vulnerabilities, e2e 44 / 44, `npm run demo` recovered 1,492,866 of 1,493,060 sats with 194 sats fees in 36.9 s, `npm run playground` reached READY and `npm run demo:check` printed READY. Clone folders and Docker containers were removed afterwards.
 
 ## Not run
 

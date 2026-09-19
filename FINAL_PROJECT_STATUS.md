@@ -8,10 +8,11 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 
 | Item | Status |
 |---|---|
-| Local commit | `feat: freeze Lifeboat hackathon release candidate` (local only; hash in `git log`; a follow-up docs commit records the clean-clone result) |
+| Local commits | `3f4f096` feat: freeze Lifeboat hackathon release candidate; `024e71a` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local, nothing pushed |
+| Clean clone | **PASS** on the final code: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `3f4f096`) had one flaky e2e check, fixed in `024e71a` |
 | Tests | `npm run check`: typecheck clean, **159 / 159** pass (22 files); 2026-09-20 after a fresh `npm ci` |
 | E2E | **44 / 44** real-LND checks (regtest, Docker) |
-| Benchmark | Freeze run through the UI: **37.6 s** total, **24.0 s** wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees, relays 2/0 accepted, 1 of 2 reachable at restore, verification verified. Known benchmark 37.9 s / 24.3 s and earlier range 37.1 to 40.9 s: **no material difference** |
+| Benchmark | Freeze run through the UI: **37.6 s** total, **24.0 s** wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees, relays 2/0 accepted, 1 of 2 reachable at restore, verification verified. Known benchmark 37.9 s / 24.3 s and earlier range 36.9 to 40.9 s: **no material difference** |
 | Browser | **Chrome verified** (headless, fresh profile, 0 console errors). Firefox and Safari **not tested**, no support claimed |
 | Public relay | **Partial**: one-shot dummy-event tests on 4 public relays (2 passed both runs, 1 intermittent, 1 timed out once) plus a read-only adversarial query; retention unmeasured. No further public testing was done in this phase |
 | Testnet | **NOT TESTED** |
@@ -45,7 +46,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Real-LND e2e checks | 24 | 41 | **44** |
 | Recovery drill | 2 channels, 1 relay | same | 2 channels, **2 relays, one switched off during restore** |
 
-Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 37.1 to 40.9 s across nine runs (section G).
+Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 36.9 to 40.9 s across ten runs (section G).
 
 ## C. Bugs fixed (each has a regression test)
 
@@ -83,7 +84,7 @@ Listed with tests in `docs/security-architecture.md` and `docs/security.md`; thr
 
 ## G. Real-LND results
 
-Recovery drill, final code (`npm run demo`, 2026-09-19): 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**, total **37.9 s**, wipe to funds back 24.3 s. Steps (measured): lnd backup export 13 ms, encryption and signing 5.5 ms, publish 10 ms, verification 41 ms, discovery 24 ms, import into lnd 85 ms, redial 15.0 s (a fixed 5 × 3 s schedule, not measured work), backup 1,811 bytes, relays 2 accepted / 0 failed, 2 healthy before the disaster, 1 reachable at restore. Nine runs ranged 37.1 to 40.9 s. The earlier baseline (1,492,866 / 194 sats / 38 to 48 s) is reproduced; the small time difference is run-to-run variation plus the added verification step (tens of milliseconds).
+Recovery drill, final code (`npm run demo`, 2026-09-19): 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**, total **37.9 s**, wipe to funds back 24.3 s. Steps (measured): lnd backup export 13 ms, encryption and signing 5.5 ms, publish 10 ms, verification 41 ms, discovery 24 ms, import into lnd 85 ms, redial 15.0 s (a fixed 5 × 3 s schedule, not measured work), backup 1,811 bytes, relays 2 accepted / 0 failed, 2 healthy before the disaster, 1 reachable at restore. Ten runs ranged 36.9 to 40.9 s. The earlier baseline (1,492,866 / 194 sats / 38 to 48 s) is reproduced; the small time difference is run-to-run variation plus the added verification step (tens of milliseconds).
 
 e2e: 44 / 44, including wipe and restore with only the restricted restore macaroon (1,739,326 of 1,739,590 sats across 3 channels), lnd validating the relay copy through the read-only macaroon, and lnd rejecting a corrupted blob.
 

@@ -20,7 +20,7 @@ Status legend: **verified** = exercised here by an automated test or a run this 
 | Strict input validation, request ids, explained errors | verified | `web.test.ts`, `errors.test.ts` |
 | lnd itself decrypts the relay copy (`VerifyChanBackup`) during verification | verified (real LND, read-only macaroon) | `verify.test.ts`, e2e |
 | Hostile-relay handling (junk frames, malformed and huge events, unusable payloads, disconnects) | verified | `hostile.test.ts` |
-| Recovery drill with two relays, one switched off, per-step timings | verified (9 runs) | `submission/test-results.md` |
+| Recovery drill with two relays, one switched off, per-step timings | verified (10 runs) | `submission/test-results.md` |
 | `demo:check` (READY only when every component answered), `demo:reset` (`<repo>/data` only), prerequisite checks | verified (unit tests, manual runs, clean clone) | `demo-env.test.ts` |
 | Expected-network guard `LIFEBOAT_NETWORK`, `testnet4` recognised | unit-tested against a stub only | `config.test.ts`, `monitor.test.ts` |
 | Testnet / signet run | not done | `testnet-checklist.md` |

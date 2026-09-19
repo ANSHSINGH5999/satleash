@@ -18,9 +18,9 @@ Release candidate for a **future** publication. This phase is local only: nothin
 | [x] | Documentation | counts, benchmark, Chrome-only, public-relay-partial, testnet NOT TESTED and remote CI NOT RUN checked for consistency |
 | [x] | Screenshots | 10 reviewed: no personal data, secrets or failed states; REGTEST badge and product name correct |
 | [x] | Submission package | `submission/`: links to maintained documents, real test results, explicit URL placeholders |
-| [ ] | Local Git commit | pending |
-| [ ] | Clean local clone | pending |
-| [ ] | Clean clone test | pending |
+| [x] | Local Git commit | `3f4f096` (freeze) and `024e71a` (fix), plus a docs-only commit recording the clean-clone result; author `kma <anshansh5999@gmail.com>` from the repo-local git config, change it with `git commit --amend --reset-author` if you prefer another identity. Nothing pushed |
+| [x] | Clean local clone | `git clone` from the local repository into a Docker-shareable folder; tree identical to the committed working copy; folder deleted afterwards |
+| [x] | Clean clone test | Final code: `npm ci`, **159 / 159** tests, audit 0, **44 / 44** e2e, `demo:reset`, `demo` (recovered 1,492,866 of 1,493,060 sats, 194 sats fees, 36.9 s), `playground` READY, `demo:check` READY. The first clone (`3f4f096`) had one flaky e2e check (a `verifyNow` race), fixed in `024e71a` and covered by a regression test |
 | [x] | No remote configured | `git remote -v` prints nothing |
 | [x] | No public deployment | no deployment configuration exists; nothing is hosted |
 | [x] | No Devfolio submission | nothing submitted |
