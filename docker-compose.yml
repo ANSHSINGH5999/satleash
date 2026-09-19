@@ -1,0 +1,43 @@
+# Regtest only: throwaway keys, fake coins. Every published port is bound to 127.0.0.1 because the passwords here are known.
+x-lnd: &lnd
+  image: polarlightning/lnd:0.20.0-beta
+  depends_on: [bitcoind]
+  restart: "no"
+  command:
+    - --bitcoin.regtest
+    - --bitcoin.node=bitcoind
+    - --bitcoind.rpchost=bitcoind:18443
+    - --bitcoind.rpcuser=lb
+    - --bitcoind.rpcpass=lb
+    - --bitcoind.zmqpubrawblock=tcp://bitcoind:28334
+    - --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
+    - --rpclisten=0.0.0.0:10009
+    - --restlisten=0.0.0.0:8080
+    - --listen=0.0.0.0:9735
+
+services:
+  bitcoind:
+    image: polarlightning/bitcoind:30.0
+    command:
+      - -regtest=1
+      - -server=1
+      - -txindex=1
+      - -rpcuser=lb
+      - -rpcpassword=lb
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -zmqpubrawblock=tcp://0.0.0.0:28334
+      - -zmqpubrawtx=tcp://0.0.0.0:28335
+      - -fallbackfee=0.00025
+      - -printtoconsole=1
+    ports: ["127.0.0.1:18443:18443"] # loopback only: the RPC password is a known throwaway
+
+  alice:
+    <<: *lnd
+    volumes: ["./data/alice:/home/lnd/.lnd"]
+    ports: ["127.0.0.1:8081:8080"]
+
+  bob:
+    <<: *lnd
+    volumes: ["./data/bob:/home/lnd/.lnd"]
+    ports: ["127.0.0.1:8082:8080"]

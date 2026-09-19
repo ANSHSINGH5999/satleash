@@ -1,0 +1,20 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run check   # typecheck + unit + browser tests (Chrome is preinstalled on ubuntu-latest; openssl is used by the lnd client tests)
+        env:
+          CI: "1"
+      # This workflow has not been run on GitHub yet: only the same commands were run locally.
+      # The regtest e2e (npm run e2e) needs Docker and takes a few minutes; run it on demand rather than on every push.

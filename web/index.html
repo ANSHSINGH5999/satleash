@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lifeboat — Back up, verify, recover your Lightning node</title>
+<meta name="description" content="Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file. Demonstrated on regtest with real LND nodes.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23a78bfa' stroke-width='5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;800&amp;display=block">
+<style>
+:root{
+  --u: min(calc(100vw / 1280), calc(100dvh / 760));
+
+  --ink:        #ffffff;
+  --ink-muted:  #ededed;
+  --ink-soft:   #cfcfd6;
+  --ink-dim:    #9a9aa3;
+  --accent:     #a78bfa;
+  --ok:         #7ee2a8;
+  --panel:      #181818;
+  --white-btn:  #fdfdfd;
+  --btn-ink:    #050505;
+  --glass-fill: rgba(0,0,0,.78);
+  --glass-line: rgba(255,255,255,.09);
+  --surface:    rgba(255,255,255,.035);
+
+  --dx: 8.5;
+  --dy: 13.1;
+
+  --e-reveal: cubic-bezier(.16, 1, .3, 1);
+  --e-soft:   cubic-bezier(.25, .8, .3, 1);
+}
+@supports not (height: 100dvh){
+  :root{ --u: min(calc(100vw / 1280), calc(100vh / 760)); }
+}
+
+*{box-sizing:border-box}
+html{background:#000;scroll-behavior:smooth}
+html,body{margin:0;padding:0}
+body{
+  background:#000;overflow-x:hidden;
+  font-family:'PJS','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:geometricPrecision;
+  color:var(--ink);
+}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:99px}
+
+/* ---------- hero + video stage ---------- */
+.hero{position:relative;width:100%;height:100dvh;overflow:hidden;background:#000}
+@supports not (height: 100dvh){ .hero{height:100vh} }
+
+.bg{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:max(100vw, calc(100dvh * 1.6));
+  height:max(62.5vw, 100dvh);
+  background-color:#000;
+}
+@supports not (height: 100dvh){
+  .bg{width:max(100vw, calc(100vh * 1.6));height:max(62.5vw, 100vh)}
+}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---------- nav (fixed; gains a blur once the page scrolls) ---------- */
+.nav{
+  position:fixed;top:0;left:0;right:0;height:calc(67 * var(--u));
+  display:flex;align-items:center;
+  padding-left:calc(24.5 * var(--u));padding-right:calc(50.7 * var(--u));
+  z-index:30;
+  border-bottom:1px solid transparent;
+  transition:background .25s ease,border-color .25s ease,-webkit-backdrop-filter .25s ease,backdrop-filter .25s ease;
+}
+.nav.scrolled{
+  background:rgba(0,0,0,.58);border-bottom-color:rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+}
+.logo{
+  font-weight:800;font-size:calc(26 * var(--u));letter-spacing:calc(0.45 * var(--u));
+  transform:translateY(calc(-2.4 * var(--u)));line-height:1;color:var(--ink);
+  text-decoration:none;white-space:nowrap;
+}
+.nav-links{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) translateX(calc(-23 * var(--u)));
+  display:flex;align-items:center;gap:calc(24.3 * var(--u));white-space:nowrap;
+}
+.nav-links a{
+  color:var(--ink-muted);text-decoration:none;font-size:calc(11.5 * var(--u));
+  font-weight:500;letter-spacing:calc(-0.15 * var(--u));line-height:1;
+  transition:color .18s ease;
+}
+.nav-links a:hover{color:#fff}
+.nav-links a[hidden],.menu a[hidden]{display:none}
+.nav-actions{margin-left:auto;display:flex;align-items:center;gap:calc(6.8 * var(--u))}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:inherit;text-decoration:none;white-space:nowrap;border:0;cursor:pointer;
+}
+.arw{flex:0 0 auto;display:block}
+
+.btn-nav-start{
+  height:calc(28 * var(--u));padding-left:calc(13.5 * var(--u));
+  padding-right:calc(14.5 * var(--u));border-radius:calc(14 * var(--u));
+  background:var(--white-btn);color:var(--btn-ink);font-size:calc(11.1 * var(--u));
+  font-weight:500;letter-spacing:0;gap:calc(7 * var(--u));
+  transition:background .18s ease;
+}
+.btn-nav-start:hover{background:#fff}
+.btn-nav-start .arw{width:calc(11.5 * var(--u));height:calc(9.6 * var(--u))}
+
+.burger{
+  display:none;margin-left:auto;width:calc(40 * var(--u));height:calc(28 * var(--u));
+  align-items:center;justify-content:center;
+  background:var(--panel);border-radius:calc(14 * var(--u));border:0;cursor:pointer;padding:0;
+}
+.burger span{display:block;width:16px;height:1.5px;background:#ededed;border-radius:2px;position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:16px;height:1.5px;background:#ededed;border-radius:2px}
+.burger span::before{top:-5px}
+.burger span::after{top:5px}
+
+.menu{display:none}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+
+/* ---------- hero content ---------- */
+.hero-inner{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) translate(calc(var(--dx) * var(--u)), calc(var(--dy) * var(--u)));
+  width:max-content;text-align:center;z-index:2;
+}
+.ln{display:block}
+.ln-i{display:block;white-space:nowrap}
+h1{
+  margin:0;font-weight:500;font-size:calc(76 * var(--u));
+  line-height:calc(80 * var(--u));letter-spacing:calc(-1 * var(--u));color:var(--ink);
+}
+.sub{
+  margin:calc(16.1 * var(--u)) auto 0;font-weight:300;font-size:calc(17.4 * var(--u));
+  line-height:calc(27 * var(--u));letter-spacing:calc(-0.30 * var(--u));color:#f6f6f6;
+  max-width:calc(660 * var(--u));text-wrap:balance;
+}
+.ctas{
+  margin-top:calc(21.8 * var(--u));display:flex;align-items:center;justify-content:center;
+  transform:translateX(calc(-0.75 * var(--u)));gap:calc(7 * var(--u));
+}
+.btn-lg{
+  height:calc(39 * var(--u));border-radius:calc(19.5 * var(--u));
+  font-size:calc(13.3 * var(--u));font-weight:500;letter-spacing:calc(-0.3 * var(--u));gap:calc(9 * var(--u));
+}
+.btn-primary{
+  background:var(--white-btn);color:var(--btn-ink);
+  padding-left:calc(18.2 * var(--u));padding-right:calc(19.2 * var(--u));
+  transition:background .18s ease,transform .18s ease;
+}
+.btn-primary:hover{background:#fff}
+.btn-ghost{
+  background:var(--glass-fill);color:#d9d9d9;padding:0 calc(17.4 * var(--u));
+  border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  transition:background .18s ease,border-color .18s ease;
+}
+.btn-ghost:hover{background:rgba(0,0,0,.66);border-color:rgba(255,255,255,.16)}
+.btn-lg .arw{width:calc(13 * var(--u));height:calc(10.8 * var(--u))}
+
+/* ---------- content sections (same palette, type and hairlines as the hero) ---------- */
+.sec{position:relative;background:#000;padding:clamp(80px,10vw,150px) 24px;border-top:1px solid rgba(255,255,255,.06)}
+.wrap{max-width:1120px;margin:0 auto}
+.eyebrow{margin:0 0 18px;color:var(--accent);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.h2{margin:0;font-weight:500;font-size:clamp(32px,4.6vw,58px);line-height:1.06;letter-spacing:-.025em;max-width:16ch}
+.lead{margin:22px 0 0;max-width:58ch;font-weight:300;font-size:clamp(16px,1.4vw,18px);line-height:1.65;color:var(--ink-soft)}
+.lead strong{font-weight:500;color:#fff}
+.lead code,.fine code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;color:#fff;background:var(--surface);border:1px solid var(--glass-line);border-radius:6px;padding:1px 6px}
+
+.steps{margin:clamp(40px,5vw,72px) 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,1fr);
+  border:1px solid var(--glass-line);border-radius:24px;overflow:hidden;background:var(--surface)}
+.steps li{padding:clamp(24px,3vw,40px);border-left:1px solid var(--glass-line)}
+.steps li:first-child{border-left:0}
+.step-n{display:block;font-weight:300;font-size:44px;line-height:1;letter-spacing:-.03em;color:var(--accent)}
+.steps h3{margin:26px 0 12px;font-weight:500;font-size:22px;letter-spacing:-.02em}
+.steps p{margin:0;font-weight:300;font-size:15.5px;line-height:1.65;color:var(--ink-soft)}
+.tags{margin:22px 0 0;font-size:12px;letter-spacing:.02em;color:var(--ink-dim)}
+
+.stats{margin:clamp(36px,5vw,64px) 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(20px,3vw,40px)}
+.stats b{display:block;font-weight:500;font-size:clamp(30px,3.6vw,48px);letter-spacing:-.03em;line-height:1.05}
+.stats span{display:block;margin-top:10px;font-weight:300;font-size:14.5px;line-height:1.5;color:var(--ink-dim);max-width:24ch}
+
+.term{margin:clamp(36px,5vw,56px) 0 0;border:1px solid var(--glass-line);border-radius:20px;background:var(--surface);overflow:hidden}
+.term-bar{display:flex;justify-content:space-between;gap:16px;padding:12px 20px;border-bottom:1px solid var(--glass-line);font-size:12px;color:var(--ink-dim)}
+.term pre{margin:0;padding:20px;max-height:440px;overflow:auto;font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-soft);white-space:pre-wrap;overflow-wrap:anywhere}
+.term .h{color:#c4b5fd}
+.term .p{color:var(--ok)}
+.term .f,.term .e{color:#ff9b9b}
+.fine{margin:16px 0 0;font-size:13px;line-height:1.6;color:var(--ink-dim);max-width:70ch}
+
+.console{margin:clamp(36px,5vw,64px) 0 0}
+.console-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.status{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 16px;border:1px solid var(--glass-line);border-radius:18px;background:var(--surface);font-size:13px;font-weight:500;color:var(--ink-soft)}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim)}
+.status em{font-style:normal;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.console[data-state=running] .dot{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+.console[data-state=pass] .dot,.console[data-state=recorded] .dot{background:var(--ok)}
+.console[data-state=fail] .dot{background:#ff8a8a}
+@keyframes pulse{50%{opacity:.3}}
+.run-btn[disabled]{opacity:.42;cursor:not-allowed}
+.console-note{margin:14px 0 0;font-size:13px;line-height:1.6;color:var(--ink-dim);max-width:74ch}
+.console-note code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em;color:#fff}
+.track{margin:30px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.track li{position:relative;padding-top:16px;font-size:13px;line-height:1.4;color:var(--ink-dim);transition:color .3s ease}
+.track li::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;border-radius:2px;background:rgba(255,255,255,.09);transition:background .3s ease}
+.track li b{display:block;margin-bottom:3px;font-weight:600;font-size:11.5px;letter-spacing:.1em;color:var(--ink-dim)}
+.track li[data-s=active]{color:#fff}
+.track li[data-s=active]::before{background:linear-gradient(90deg,var(--accent),rgba(167,139,250,.2));animation:pulse 1.4s ease-in-out infinite}
+.track li[data-s=done]::before{background:var(--accent)}
+.track li[data-s=done] b{color:var(--accent)}
+.track li[data-s=fail]{color:#ffb4b4}
+.track li[data-s=fail]::before{background:#ff8a8a}
+.checks{margin:26px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:10px}
+.checks li{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border:1px solid var(--glass-line);border-radius:999px;font-size:12.5px;color:var(--ink-dim)}
+.checks li::before{content:"\25CB";font-size:11px}
+.checks li[data-s=pass]{color:var(--ink-soft)}
+.checks li[data-s=pass]::before{content:"\2713";color:var(--ok);font-weight:700}
+.checks li[data-s=fail]{color:#ffb4b4}
+.checks li[data-s=fail]::before{content:"\2715";color:#ff8a8a;font-weight:700}
+.checks li span{color:#fff;font-variant-numeric:tabular-nums}
+.checks li span:not(:empty)::before{content:"\00B7\00A0"}
+
+.metrics{margin:22px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metrics div{padding:14px 16px;border:1px solid var(--glass-line);border-radius:14px;background:var(--surface);min-width:0}
+.metrics span{display:block;font-size:12px;line-height:1.4;color:var(--ink-dim)}
+.metrics b{display:block;margin-top:6px;font-size:20px;font-weight:500;letter-spacing:-.01em}
+.metrics .fp{grid-column:1/-1}
+.metrics .fp b{font-size:12.5px;font-weight:400;overflow-wrap:anywhere}
+.arch{margin:clamp(36px,5vw,64px) 0 0;display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:14px;align-items:center}
+.arch-arrow{color:var(--accent);font-size:26px;text-align:center}
+.arch .node{padding:20px 22px;border:1px solid var(--glass-line);border-radius:18px;background:var(--surface);font-size:17px;font-weight:500}
+.arch .node small{display:block;margin-top:6px;font-size:12.5px;font-weight:300;color:var(--ink-dim);line-height:1.5}
+.arch .relays{display:grid;gap:8px}
+.arch .node.sm{padding:11px 16px;font-size:14px}
+.flow{margin:24px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px 6px;counter-reset:f}
+.flow li{counter-increment:f;padding:8px 14px;border:1px solid var(--glass-line);border-radius:999px;font-size:12.5px;font-weight:600;letter-spacing:.08em;color:var(--ink-soft)}
+.flow li:not(:last-child)::after{content:"\2192";margin-left:12px;color:var(--accent)}
+.limits{margin:clamp(36px,5vw,64px) 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,1fr);
+  border-top:1px solid var(--glass-line)}
+.limits li{padding:26px 0;border-bottom:1px solid var(--glass-line)}
+.limits li:nth-child(odd){padding-right:clamp(20px,4vw,56px)}
+.limits li:nth-child(even){padding-left:clamp(20px,4vw,56px);border-left:1px solid var(--glass-line)}
+.limits strong{display:block;font-weight:500;font-size:18px;letter-spacing:-.015em;margin-bottom:8px}
+.limits span{font-weight:300;font-size:15px;line-height:1.65;color:var(--ink-soft)}
+
+.cmds{margin:clamp(36px,5vw,56px) 0 0;display:grid;gap:14px}
+.cmd{border:1px solid var(--glass-line);border-radius:18px;background:var(--surface);padding:18px 20px}
+.cmd-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.cmd-head span{font-weight:500;font-size:14px;color:var(--ink-muted)}
+.copy{height:30px;padding:0 14px;border-radius:15px;background:var(--panel);color:#e8e8e8;font-size:12px;font-weight:500;transition:background .18s ease,color .18s ease}
+.copy:hover{background:#232323;color:#fff}
+.cmd code{display:block;font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-soft);white-space:pre-wrap;overflow-wrap:anywhere}
+.warn{margin:22px 0 0;padding:14px 18px;border:1px solid rgba(167,139,250,.35);border-radius:14px;background:rgba(167,139,250,.07);font-size:14px;line-height:1.6;color:#e3dcff;max-width:78ch}
+
+.foot{padding:36px 24px 44px;border-top:1px solid rgba(255,255,255,.06);background:#000}
+.foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-dim)}
+.foot b{font-weight:800;color:#fff;letter-spacing:.02em}
+
+/* ---------- tablet ---------- */
+@media (max-width:1160px){
+  :root{ --u: min(
+      max(0.9px, min(calc(100vw / 1280), calc(100dvh / 760))),
+      calc((100vw - 72px) / 575),
+      calc(100dvh / 620)
+    ); }
+  @supports not (height: 100dvh){
+    :root{ --u: min(
+        max(0.9px, min(calc(100vw / 1280), calc(100vh / 760))),
+        calc((100vw - 72px) / 575),
+        calc(100vh / 620)
+      ); }
+  }
+  .nav{height:max(58px, calc(67 * var(--u)));
+       padding-left:max(24px, calc(28 * var(--u)));
+       padding-right:max(24px, calc(28 * var(--u)))}
+  .nav-links,.nav-actions{display:none}
+  .burger{display:flex;width:max(46px, calc(48 * var(--u)));
+          height:max(38px, calc(34 * var(--u)));border-radius:999px}
+  .hero-inner{max-width:calc(100vw - 48px)}
+  .sub{font-size:max(16px, calc(17.4 * var(--u)));line-height:max(25px, calc(27 * var(--u)))}
+  .ctas{margin-top:max(26px, calc(21.8 * var(--u)));gap:max(10px, calc(7 * var(--u)))}
+  .btn-lg{height:max(44px, calc(39 * var(--u)));border-radius:max(22px, calc(19.5 * var(--u)));
+          font-size:max(15px, calc(13.3 * var(--u)));gap:max(10px, calc(9 * var(--u)))}
+  .btn-primary{padding-left:max(21px, calc(18.2 * var(--u)));
+               padding-right:max(22px, calc(19.2 * var(--u)))}
+  .btn-ghost{padding-left:max(20px, calc(17.4 * var(--u)));
+             padding-right:max(21px, calc(18.4 * var(--u)))}
+  .btn-lg .arw{width:max(14px, calc(13 * var(--u)));height:max(11.6px, calc(10.8 * var(--u)))}
+  .menu{position:fixed;top:calc(max(58px, calc(67 * var(--u))) - 6px);
+        right:max(24px, calc(28 * var(--u)));width:min(320px, calc(100vw - 48px));
+        background:rgba(10,10,12,.86);-webkit-backdrop-filter:blur(22px);
+        backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.09);
+        border-radius:20px;padding:10px 8px 12px;flex-direction:column;
+        box-shadow:0 24px 60px rgba(0,0,0,.55);transform-origin:top right;z-index:40}
+  .menu.open{display:flex;animation:menuIn .18s ease both}
+  .menu a{color:var(--ink-muted);text-decoration:none;font-size:15px;font-weight:500;
+          letter-spacing:calc(-0.15 * var(--u));padding:12px 14px;border-radius:12px;
+          transition:background .18s ease,color .18s ease}
+  .menu a:hover{background:rgba(255,255,255,.06);color:#fff}
+  .menu .divider{height:1px;background:rgba(255,255,255,.08);margin:8px 14px}
+  .menu .m-start{display:flex;align-items:center;justify-content:center;gap:9px;
+    background:var(--white-btn);color:var(--btn-ink);margin:6px 8px 0;padding:13px 16px;
+    border-radius:14px;font-weight:600}
+  .menu .m-start:hover{background:#fff;color:var(--btn-ink)}
+  .menu .m-start .arw{width:13px;height:11px}
+
+  .steps{grid-template-columns:1fr}
+  .steps li{border-left:0;border-top:1px solid var(--glass-line)}
+  .steps li:first-child{border-top:0}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .track{grid-template-columns:repeat(3,1fr);row-gap:20px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .arch{grid-template-columns:1fr}
+  .arch-arrow{transform:rotate(90deg)}
+}
+
+/* ---------- mobile ---------- */
+@media (max-width:552px){
+  :root{--u:1px}
+  .nav{height:56px;padding:0 20px}
+  .logo{font-size:22px;letter-spacing:-.4px}
+  .burger{width:42px;height:36px}
+  .hero-inner{position:absolute;left:0;right:0;top:50%;width:auto;max-width:none;
+              padding:0 20px;transform:translateY(-47%)}
+  h1{font-size:min(64px, calc((100vw - 44px) / 9));line-height:1.04;letter-spacing:-.02em}
+  .sub{margin-top:16px;font-size:clamp(15.5px, 4vw, 16.5px);line-height:1.6;
+       letter-spacing:0;max-width:42ch;margin-left:auto;margin-right:auto}
+  .sub br{display:none}
+  .ctas{margin-top:24px;gap:10px;transform:none;flex-wrap:wrap}
+  .btn-lg{height:46px;border-radius:23px;font-size:15px;gap:9px}
+  .btn-primary{padding-left:20px;padding-right:21px}
+  .btn-ghost{padding-left:19px;padding-right:20px}
+  .btn-lg .arw{width:13px;height:11px}
+  .menu{top:50px;left:16px;right:16px;width:auto}
+  .menu a{font-size:15.5px;padding:13px 14px}
+  .menu .m-start{padding:14px 16px}
+
+  .sec{padding-left:20px;padding-right:20px}
+  .foot{padding-left:20px;padding-right:20px}
+  .limits{grid-template-columns:1fr}
+  .limits li:nth-child(odd),.limits li:nth-child(even){padding-left:0;padding-right:0;border-left:0}
+  .cmd{padding:16px}
+  .track{grid-template-columns:1fr}
+  .run-btn{width:100%}
+  .metrics{grid-template-columns:1fr}
+}
+
+@media (max-width:353px){
+  .ctas{flex-direction:column;align-items:center}
+  .btn-lg{width:min(100%,272px)}
+  .stats{grid-template-columns:1fr}
+}
+
+@media (max-width:552px) and (max-height:460px){
+  h1{font-size:min(40px, calc((100vw - 44px) / 9))}
+  .sub{margin-top:12px;font-size:15px;line-height:1.5}
+  .ctas{margin-top:18px}
+  .hero-inner{transform:translateY(-44%)}
+}
+
+/* ---------- entrance: resting state while fonts resolve ---------- */
+html.anim .ln{overflow:hidden;padding-top:.26em;margin-top:-.26em}
+html.anim .ln-i{transform:translateY(100%)}
+html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
+html.anim .burger, html.anim .sub, html.anim .ctas .btn{opacity:0}
+html.anim .ln-i, html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
+html.anim .sub, html.anim .ctas .btn{will-change:transform,opacity}
+
+@keyframes lineRise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes subIn{from{opacity:0;transform:translateY(calc(14 * var(--u)));filter:blur(4px)}
+                 to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes subInFlat{from{opacity:0;transform:translateY(calc(12 * var(--u)))}
+                     to{opacity:1;transform:none}}
+@keyframes pillIn{from{opacity:0;transform:translateY(calc(8 * var(--u))) scale(.972)}
+                  to{opacity:1;transform:none}}
+@keyframes liftIn{from{opacity:0;transform:translateY(calc(9 * var(--u)))}
+                  to{opacity:1;transform:none}}
+@keyframes logoIn{
+  from{opacity:0;transform:translateY(calc(-2.4 * var(--u))) translateY(calc(9 * var(--u)))}
+  to  {opacity:1;transform:translateY(calc(-2.4 * var(--u)))}}
+
+html.anim.go .ln-i{animation:lineRise 1.05s var(--e-reveal) both}
+html.anim.go .ln:nth-child(1) .ln-i{animation-delay:.12s}
+html.anim.go .ln:nth-child(2) .ln-i{animation-delay:.22s}
+html.anim.go .logo{animation:logoIn .62s var(--e-soft) .46s both}
+html.anim.go .nav-links a{animation:liftIn .55s var(--e-soft) both}
+html.anim.go .nav-links a:nth-child(1){animation-delay:.540s}
+html.anim.go .nav-links a:nth-child(2){animation-delay:.585s}
+html.anim.go .nav-links a:nth-child(3){animation-delay:.630s}
+html.anim.go .nav-links a:nth-child(4){animation-delay:.675s}
+html.anim.go .nav-links a:nth-child(5){animation-delay:.720s}
+html.anim.go .sub{animation:subIn .85s var(--e-reveal) .58s both}
+html.anim.go .burger{animation:pillIn .55s var(--e-soft) .68s both}
+html.anim.go .btn-nav-start{animation:pillIn .55s var(--e-soft) .73s both}
+html.anim.go .ctas .btn-primary{animation:pillIn .70s var(--e-reveal) .90s both}
+html.anim.go .ctas .btn-ghost{animation:pillIn .70s var(--e-reveal) .97s both}
+
+@media (max-width:552px){
+  html.anim.go .sub{animation-name:subInFlat}
+  html.anim.go .ln-i{animation-duration:.92s}
+  html.anim.go .ctas .btn-primary{animation-delay:.84s}
+  html.anim.go .ctas .btn-ghost{animation-delay:.90s}
+}
+
+/* ---------- scroll reveal for the sections (armed by script, off under reduced motion) ---------- */
+html.rv-on .rv{opacity:0;transform:translateY(18px);transition:opacity .8s var(--e-reveal),transform .8s var(--e-reveal)}
+html.rv-on .rv.in{opacity:1;transform:none}
+html.rv-on .term .tl{opacity:0;transition:opacity .35s ease calc(var(--i) * 70ms)}
+html.rv-on .console.in .term .tl{opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  html.anim .ln{overflow:visible;padding-top:0;margin-top:0}
+  html.anim .ln-i{transform:none}
+  html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
+  html.anim .burger, html.anim .sub, html.anim .ctas .btn{opacity:1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script>
+/* A) ENTRANCE — arms synchronously so there is no flash of unanimated content */
+(function(){
+  var d = document, root = d.documentElement;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  root.classList.add('anim');
+
+  var started = false, cleaned = false, bootT, safeT;
+
+  function clean(){
+    if (cleaned) return;
+    cleaned = true;
+    clearTimeout(safeT);
+    root.removeEventListener('animationend', onEnd, true);
+    root.classList.remove('anim', 'go');
+  }
+  function onEnd(e){
+    if (e.animationName === 'pillIn' && e.target.classList.contains('btn-ghost')) clean();
+  }
+  function start(){
+    if (started) return;
+    started = true;
+    clearTimeout(bootT);
+    root.addEventListener('animationend', onEnd, true);
+    safeT = setTimeout(clean, 2600);
+    root.classList.add('go');
+  }
+  function boot(){
+    bootT = setTimeout(start, 900);
+    if (d.fonts && d.fonts.ready) d.fonts.ready.then(start, start);
+    else start();
+  }
+  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="logo" href="#">Lifeboat</a>
+  <nav class="nav-links" aria-label="Primary">
+    <a href="#how">How it works</a>
+    <a href="#proof">Recovery drill</a>
+    <a href="#limits">Limits</a>
+    <a href="#run">Run it</a>
+    <a href="/console" data-needs-server hidden>Console</a>
+  </nav>
+  <div class="nav-actions">
+    <a class="btn btn-nav-start" href="#proof">Run recovery drill
+      <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><span></span></button>
+</header>
+
+<nav class="menu" id="menu" aria-label="Mobile">
+  <a href="#how">How it works</a>
+  <a href="#proof">Recovery drill</a>
+  <a href="#limits">Limits</a>
+  <a href="#security">Security model</a>
+  <a href="#run">Run it</a>
+  <a href="/console" data-needs-server hidden>Console</a>
+  <div class="divider"></div>
+  <a class="m-start" href="#proof">Run recovery drill
+    <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</nav>
+
+<main>
+  <section class="hero">
+    <div class="bg" role="img" aria-label="Animated dot-matrix globe with four relay nodes exchanging encrypted packets along arcs">
+      <canvas id="bgCanvas"></canvas>
+    </div>
+
+    <div class="hero-inner">
+      <h1><span class="ln"><span class="ln-i">Back up your node.</span></span>
+          <span class="ln"><span class="ln-i">Verify. Recover.</span></span></h1>
+      <p class="sub">Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file.<br>
+        Demonstrated on regtest with real LND nodes.</p>
+      <div class="ctas">
+        <a class="btn btn-lg btn-primary" href="#proof">Run recovery drill
+          <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-lg btn-ghost" href="#architecture">View architecture
+          <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="how">
+    <div class="wrap">
+      <p class="eyebrow rv">Problem, solution, how it works</p>
+      <h2 class="h2 rv">Three moves. One seed.</h2>
+      <p class="lead rv"><strong>Problem.</strong> An LND node's channel state lives on one machine. The static channel backup that protects it is a file someone has to keep copying, and it often sits on the machine that just died. If the copy is stale or missing, the money in channels depends on peers.</p>
+      <p class="lead rv"><strong>Solution.</strong> Lifeboat puts every backup where a wiped node can still find it, using nothing but the 24 words you already keep, and checks that what the relays hold still matches the node.</p>
+      <ol class="steps rv">
+        <li>
+          <span class="step-n">01</span>
+          <h3>Back up</h3>
+          <p>A small daemon watches lnd's channel-backup stream. Every change is encrypted with NIP-44 (which also pads it) and published to your Nostr relays as one addressable event, so only the newest copy is kept.</p>
+        </li>
+        <li>
+          <span class="step-n">02</span>
+          <h3>Derive</h3>
+          <p>The Nostr key is never stored. It is derived from your wallet seed through lnd's signer, against a point nobody knows the discrete log of. A wiped node with the same seed derives the same key.</p>
+        </li>
+        <li>
+          <span class="step-n">03</span>
+          <h3>Restore</h3>
+          <p>Fetch the newest backup, hand it to lnd, then keep dialing your peers. They detect the data loss and force-close, and your channel balance lands back on-chain.</p>
+        </li>
+      </ol>
+      <p class="tags rv">Nostr kind 30078 · NIP-44 · lnd SubscribeChannelBackups · lnd DeriveSharedKey · RestoreChannelBackups</p>
+    </div>
+  </section>
+
+  <section class="sec" id="architecture">
+    <div class="wrap">
+      <p class="eyebrow rv">Architecture</p>
+      <h2 class="h2 rv">Where the backup lives, and how it comes back.</h2>
+      <p class="lead rv">lnd exports its static channel backup. Lifeboat fingerprints the channel set, encrypts the backup with a key that lnd derives from your seed, and publishes it to several Nostr relays. After a disaster the same seed finds it again.</p>
+      <div class="arch rv" role="img" aria-label="Diagram: lnd feeds Lifeboat, which encrypts and publishes to three Nostr relays. Restore fetches from the relays, validates, decrypts and imports into a new lnd.">
+        <div class="node">lnd node<small>channel backups · signer · macaroon (read-only)</small></div>
+        <div class="arch-arrow" aria-hidden="true">→</div>
+        <div class="node">Lifeboat<small>fingerprint · NIP-44 encrypt · retry · verify</small></div>
+        <div class="arch-arrow" aria-hidden="true">→</div>
+        <div class="relays"><div class="node sm">Relay A</div><div class="node sm">Relay B</div><div class="node sm">Relay C</div></div>
+      </div>
+      <ol class="flow rv" aria-label="What the disaster drill does, in order">
+        <li>BACKUP</li><li>ENCRYPT</li><li>PUBLISH</li><li>WIPE</li><li>DISCOVER</li><li>VERIFY</li><li>RESTORE</li><li>RECOVERED</li>
+      </ol>
+      <p class="tags rv">TypeScript · LND 0.20 REST · Nostr (NIP-44, NIP-78) · nostr-tools · @noble/curves · regtest on Docker</p>
+    </div>
+  </section>
+
+  <section class="sec" id="proof">
+    <div class="wrap">
+      <p class="eyebrow rv">Recovery drill</p>
+      <h2 class="h2 rv">We wiped the node. Then restored it.</h2>
+      <p class="lead rv">A full disaster drill on regtest: two channels, a complete wipe of lnd's state, and a restore that starts from the seed and the relays. Start it here and the page drives the real code on your machine.</p>
+      <div class="console rv" id="console" data-state="recorded">
+        <div class="console-head">
+          <div class="status" id="status" role="status" aria-live="polite"><i class="dot"></i><span id="statusText">Recorded run</span><em id="elapsed">19 Sep 2026</em></div>
+          <button class="btn btn-lg btn-primary run-btn" id="runBtn" type="button" disabled>Start the drill</button>
+        </div>
+        <p class="console-note" id="modeNote">Live mode is off. Start this page with <code>npm run web</code> and this button runs the real drill on your machine. Below is a recorded run.</p>
+        <ol class="track" id="track" aria-label="Drill stages">
+          <li data-s="done"><b>01</b>Fresh regtest network</li>
+          <li data-s="done"><b>02</b>Fund and open a channel</li>
+          <li data-s="done"><b>03</b>Backup daemon to Nostr</li>
+          <li data-s="done"><b>04</b>Wipe the node</li>
+          <li data-s="done"><b>05</b>Restore from the seed</li>
+          <li data-s="done"><b>06</b>Funds return on-chain</li>
+        </ol>
+        <div class="stats">
+          <div><b id="st-channels">2</b><span>channels backed up automatically, the second opened after the daemon started</span></div>
+          <div><b id="st-before">1,493,060</b><span>sats sitting in channels before the wipe</span></div>
+          <div><b id="st-after">1,492,866</b><span>sats back on-chain after the restore</span></div>
+          <div><b id="st-lost">194</b><span>sats lost, fees only</span></div>
+        </div>
+        <ul class="checks">
+          <li id="ck-pub" data-s="pass">Nostr backups published<span id="ck-pub-n">2</span></li>
+          <li id="ck-verify" data-s="pass">Backup verified by lnd before the wipe</li>
+          <li id="ck-id" data-s="pass">Same node identity from seed</li>
+          <li id="ck-key" data-s="pass">Same Nostr key re-derived from seed</li>
+          <li id="ck-fp" data-s="pass">Restored backup has the published fingerprint</li>
+        </ul>
+        <div class="metrics" id="metrics" role="group" aria-label="Recovery metrics measured by the drill">
+          <div><span>Total drill time</span><b id="m-total">37.9 s</b></div>
+          <div><span>Recovery time (wipe to funds back)</span><b id="m-recovery">24.3 s</b></div>
+          <div><span>Backup size</span><b id="m-bytes">1.8 KB</b></div>
+          <div><span>lnd backup export</span><b id="m-export">13 ms</b></div>
+          <div><span>Encryption and signing</span><b id="m-encrypt">5.5 ms</b></div>
+          <div><span>Publish time</span><b id="m-publish">10 ms</b></div>
+          <div><span>Verification (restore dry run)</span><b id="m-verify">41 ms</b></div>
+          <div><span>Discovery time</span><b id="m-discover">24 ms</b></div>
+          <div><span>Import into lnd</span><b id="m-import">85 ms</b></div>
+          <div><span>Fees paid</span><b id="m-fees">194 sats</b></div>
+          <div><span>Relays accepted / failed</span><b id="m-relays">2 / 0</b></div>
+          <div><span>Relays reachable at restore</span><b id="m-atrestore">1 of 2</b></div>
+          <div class="fp"><span>Backup fingerprint (channel set)</span><b id="m-fp" class="mono">b1208e68a3cdee647689fb38e25c7514e1e7f446bac30bcab838b06fd73f3b53</b></div>
+        </div>
+        <div class="term" id="term">
+          <div class="term-bar"><span>npm run demo</span><span id="termTag">recorded output</span></div>
+          <pre id="termPre" tabindex="0" aria-label="Drill output"><span class="tl h" style="--i:0">== fresh regtest cluster</span>
+<span class="tl" style="--i:1">relays: ws://127.0.0.1:7777/, ws://127.0.0.1:7778/</span>
+
+<span class="tl h" style="--i:2">== fund alice and open channel #1 to bob</span>
+
+<span class="tl h" style="--i:3">== start Nostr backup daemon, then open channel #2 (must be picked up automatically)</span>
+<span class="tl" style="--i:4">backup identity (Nostr pubkey derived from seed): 40425e9d1606e388b82ad6ee8e480f9835eb33d15ccd3f8887e231a7563fa041</span>
+<span class="tl" style="--i:5">published: 1ch-&gt;2relay, 2ch-&gt;2relay</span>
+<span class="tl" style="--i:6">backup fingerprint (channel set): b1208e68a3cdee647689fb38e25c7514e1e7f446bac30bcab838b06fd73f3b53</span>
+<span class="tl" style="--i:7">verify before the disaster: verified, 2 of 2 relay(s) healthy</span>
+<span class="tl p" style="--i:8">PASS</span>  <span class="tl" style="--i:8">backup verified before the disaster: lnd itself decrypted the relay copy and found 2 channel(s) in it</span>
+<span class="tl" style="--i:9">alice: 298492032 sats on-chain + 1493060 sats in 2 channels</span>
+
+<span class="tl h" style="--i:10">== DISASTER: delete alice completely (all lnd state, channel.db, macaroons, tls)</span>
+<span class="tl" style="--i:11">alice is gone; bob and the relays are all that remain. Only the 24-word seed survives.</span>
+<span class="tl" style="--i:12">relay ws://127.0.0.1:7777/ is switched off too: the restore has to work with 1 of 2 relays</span>
+
+<span class="tl h" style="--i:13">== RESTORE: new lnd from the seed alone, then pull backup from Nostr</span>
+<span class="tl p" style="--i:14">PASS</span>  <span class="tl" style="--i:14">same node identity from seed</span>
+<span class="tl p" style="--i:15">PASS</span>  <span class="tl" style="--i:15">same Nostr backup key re-derived from seed (no extra secret needed)</span>
+<span class="tl" style="--i:16">restored backup published at 2026-09-19T14:45:24.000Z</span>
+<span class="tl p" style="--i:17">PASS</span>  <span class="tl" style="--i:17">the restored backup has the channel-set fingerprint that was published</span>
+
+<span class="tl h" style="--i:18">== peers force-close (data-loss protection); mine until funds return</span>
+<span class="tl" style="--i:19">  block 0: on-chain 298492032 sats</span>
+<span class="tl" style="--i:20">recovered 1492866 of 1493060 channel sats on-chain</span>
+<span class="tl" style="--i:21">metrics: {"backupBytes":1811,"publishMs":10,"discoverMs":24,"importMs":85,"redialMs":15045,"exportMs":13,"encryptMs":5.53,"verifyMs":41,"relaysHealthy":2,"relaysAtRestore":1,"recoveryMs":24277,"totalMs":37894,"relaysOk":2,"relaysFailed":0,"feesSats":194}</span>
+<span class="tl p" style="--i:22">PASS</span>  <span class="tl" style="--i:22">channel funds recovered (only fees lost)</span></pre>
+        </div>
+      </div>
+      <p class="fine rv">Regtest only: lnd 0.20.0-beta, bitcoind 30.0, two local relays, one of them switched off during the restore. The first run of this drill failed: lnd's own restore dials a peer once, and with two channels to the same peer that single attempt was torn down mid-handshake, so nobody force-closed. Lifeboat now stores peer hints inside the encrypted backup and keeps redialing after restore.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="security">
+    <div class="wrap">
+      <p class="eyebrow rv">Security model</p>
+      <h2 class="h2 rv">Relays are not trusted. Neither is the browser.</h2>
+      <p class="lead rv">Each of these is enforced in code and covered by a test. Integrity does not depend on a relay behaving well; availability does, which is why Lifeboat uses several.</p>
+      <ul class="limits rv">
+        <li><strong>The backup key is never stored.</strong><span>It is re-derived from your seed through lnd's signer. Lose the machine and the seed is all you need.</span></li>
+        <li><strong>Relays see ciphertext, not contents.</strong><span>NIP-44 encrypted and padded. They learn that a key publishes, when, and roughly how much, not what is inside.</span></li>
+        <li><strong>Bad relay data is ignored.</strong><span>Events from other keys, wrong tags, broken signatures or corrupted content are skipped. The newest valid backup across all relays wins.</span></li>
+        <li><strong>Least-privilege macaroons.</strong><span>The daemon runs read-only. The restore macaroon adds import and dial rights. lnd itself confirms that neither can spend on-chain.</span></li>
+        <li><strong>Verify without restoring.</strong><span>The console fetches the backup from every relay, decrypts it and compares it with the node's current channels.</span></li>
+        <li><strong>The console is local and guarded.</strong><span>Loopback only, a per-run token for anything that changes state, Host and Origin checks, and a nonce-based Content Security Policy.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="limits">
+    <div class="wrap">
+      <p class="eyebrow rv">Limits</p>
+      <h2 class="h2 rv">What it can't do.</h2>
+      <p class="lead rv">Lifeboat recovers money, not channels. These are the edges we know about today.</p>
+      <ul class="limits rv">
+        <li><strong>It closes your channels.</strong><span>A restore brings funds back on-chain. It does not bring channel state back.</span></li>
+        <li><strong>Peers must be online.</strong><span>They are the ones who force-close. An offline peer means the money waits.</span></li>
+        <li><strong>About 200 channels per backup.</strong><span>NIP-44 caps a payload at 64 KB and chunking is not built yet.</span></li>
+        <li><strong>Relays can withhold or go stale.</strong><span>Publish to several. Restore takes the newest copy any relay returns.</span></li>
+        <li><strong>Verified on regtest.</strong><span>Public relays got a one-shot test with a throwaway key and dummy data. Testnet and mainnet have not been tested.</span></li>
+        <li><strong>LND only.</strong><span>Core Lightning and LDK use different backup formats and are not supported.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="run">
+    <div class="wrap">
+      <p class="eyebrow rv">Run it</p>
+      <h2 class="h2 rv">Run it yourself.</h2>
+      <p class="lead rv">The drill needs Docker and Node. It builds a throwaway regtest network, so no real coins are involved.</p>
+      <div class="cmds rv">
+        <div class="cmd">
+          <div class="cmd-head"><span>Open this page with the live drill button, then visit http://127.0.0.1:8080</span><button class="btn copy" type="button" data-copy="c0">Copy</button></div>
+          <code id="c0">npm install &amp;&amp; npm run web</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Regtest playground: real channels, two relays, and the console showing live data at /console</span><button class="btn copy" type="button" data-copy="c5">Copy</button></div>
+          <code id="c5">npm run playground</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Full disaster drill in the terminal</span><button class="btn copy" type="button" data-copy="c1">Copy</button></div>
+          <code id="c1">npm run demo</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Bake a read-only macaroon for the daemon (needs an admin macaroon once; add --restore for a restore macaroon)</span><button class="btn copy" type="button" data-copy="c6">Copy</button></div>
+          <code id="c6">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=&lt;admin macaroon&gt; LND_PORT=8080 npm run cli -- bake --out monitor.macaroon</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Run the backup daemon against your own lnd</span><button class="btn copy" type="button" data-copy="c2">Copy</button></div>
+          <code id="c2">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run daemon</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Verify the backup on the relays matches your node (a restore dry run, exits 1 if not)</span><button class="btn copy" type="button" data-copy="c7">Copy</button></div>
+          <code id="c7">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- verify</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Restore on a fresh node created from the same seed</span><button class="btn copy" type="button" data-copy="c3">Copy</button></div>
+          <code id="c3">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=restore.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- restore</code>
+        </div>
+      </div>
+      <p class="warn rv">Only regtest has been tested end to end. Do not point the daemon at a node holding funds you cannot afford to lose.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span><b>Lifeboat</b> &nbsp;·&nbsp; Lightning recovery over Nostr</span>
+    <span>Built for BOSS Battle &nbsp;·&nbsp; regtest prototype</span>
+  </div>
+</footer>
+
+<script>
+/* B) BURGER */
+(function(){
+  var burger = document.getElementById('burger');
+  var menu = document.getElementById('menu');
+  if (!burger || !menu) return;
+
+  function set(open){
+    menu.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  burger.addEventListener('click', function(e){
+    e.stopPropagation();
+    set(!menu.classList.contains('open'));
+  });
+  menu.addEventListener('click', function(e){
+    if (e.target.closest('a')) set(false);
+  });
+  document.addEventListener('click', function(e){
+    if (menu.classList.contains('open') && !menu.contains(e.target) && !burger.contains(e.target)) set(false);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && menu.classList.contains('open')) {
+      set(false);
+      burger.focus();
+    }
+  });
+})();
+</script>
+
+<script>
+/* D) PAGE — nav blur on scroll, section reveal, copy buttons */
+(function(){
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 40); }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  if (!reduced && 'IntersectionObserver' in window) {
+    document.documentElement.classList.add('rv-on');
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+  }
+
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    return ok;
+  }
+  document.querySelectorAll('[data-copy]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = document.getElementById(btn.getAttribute('data-copy')).textContent.trim();
+      var label = btn.textContent;
+      function done(ok){
+        btn.textContent = ok ? 'Copied' : 'Press Ctrl/Cmd+C';
+        setTimeout(function(){ btn.textContent = label; }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(fallbackCopy(text)); });
+      } else {
+        done(fallbackCopy(text));
+      }
+    });
+  });
+})();
+</script>
+
+<script>
+/* E) LIVE DRILL — talks to `npm run web`; without that server the page keeps showing the recorded run */
+(function(){
+  var con = document.getElementById('console');
+  if (!con) return;
+  var $ = function(id){ return document.getElementById(id); };
+  var pre = $('termPre'), statusText = $('statusText'), elapsed = $('elapsed'), runBtn = $('runBtn'),
+      note = $('modeNote'), tag = $('termTag'), track = [].slice.call($('track').children);
+  var st = { channels: $('st-channels'), before: $('st-before'), after: $('st-after'), lost: $('st-lost') };
+  var ck = { pub: $('ck-pub'), verify: $('ck-verify'), id: $('ck-id'), key: $('ck-key'), fp: $('ck-fp') }, ckN = $('ck-pub-n');
+  var mt = { total: $('m-total'), recovery: $('m-recovery'), bytes: $('m-bytes'), publish: $('m-publish'), discover: $('m-discover'), imp: $('m-import'), relays: $('m-relays'), fees: $('m-fees'), fp: $('m-fp'), exp: $('m-export'), enc: $('m-encrypt'), ver: $('m-verify'), atRestore: $('m-atrestore') };
+  var token = null, timer = 0, startedAt = 0, m = {};
+  function dur(ms){ return ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(1) + ' s'; }
+
+  function fmt(n){ return Number(n).toLocaleString('en-US'); }
+  function mmss(ms){ var s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function setState(state, text){ con.setAttribute('data-state', state); statusText.textContent = text; }
+  function tick(){ elapsed.textContent = mmss(Date.now() - startedAt); }
+
+  function reset(){
+    m = {};
+    pre.textContent = '';
+    track.forEach(function(li){ li.setAttribute('data-s', 'pending'); });
+    [ck.pub, ck.verify, ck.id, ck.key, ck.fp].forEach(function(li){ li.setAttribute('data-s', 'pending'); });
+    ckN.textContent = '';
+    Object.keys(st).forEach(function(k){ st[k].textContent = '—'; });
+    Object.keys(mt).forEach(function(k){ mt[k].textContent = '—'; });
+    tag.textContent = 'live output';
+    elapsed.textContent = '';
+  }
+  function line(e){
+    if (!e.text && !pre.firstChild) return;
+    var sp = document.createElement('span');
+    sp.className = e.kind === 'head' ? 'h' : e.kind === 'pass' ? 'p' : e.kind === 'fail' ? 'f' : e.kind === 'err' ? 'e' : '';
+    sp.textContent = e.text;
+    var stick = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 24;
+    pre.appendChild(sp);
+    pre.appendChild(document.createTextNode('\n'));
+    if (stick) pre.scrollTop = pre.scrollHeight;
+  }
+  function stage(i){
+    track.forEach(function(li, n){ li.setAttribute('data-s', n < i ? 'done' : n === i ? 'active' : 'pending'); });
+  }
+  function metric(k, v){
+    m[k] = v;
+    if (k === 'channels') st.channels.textContent = fmt(v);
+    if (k === 'channelSats') st.before.textContent = fmt(v);
+    // while blocks are mined, show funds coming back as they land on-chain
+    if (k === 'onchainNow' && m.onchainBefore != null) st.after.textContent = fmt(Math.max(0, v - m.onchainBefore));
+    if (k === 'recovered') st.after.textContent = fmt(v);
+    if ((k === 'recovered' || k === 'channelSats') && m.recovered != null && m.channelSats != null) st.lost.textContent = fmt(m.channelSats - m.recovered);
+    if (k === 'publishes') { ck.pub.setAttribute('data-s', 'pass'); ckN.textContent = String(v); }
+    if (k === 'fingerprint') mt.fp.textContent = String(v);
+    if (k === 'backupBytes') mt.bytes.textContent = v < 1024 ? v + ' B' : (v / 1024).toFixed(1) + ' KB';
+    if (k === 'publishMs') mt.publish.textContent = dur(v);
+    if (k === 'discoverMs') mt.discover.textContent = dur(v);
+    if (k === 'importMs') mt.imp.textContent = dur(v);
+    if (k === 'recoveryMs') mt.recovery.textContent = dur(v);
+    if (k === 'totalMs') mt.total.textContent = dur(v);
+    if (k === 'exportMs') mt.exp.textContent = dur(v);
+    if (k === 'encryptMs') mt.enc.textContent = (v < 1 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : Math.round(v)) + ' ms';
+    if (k === 'verifyMs') mt.ver.textContent = dur(v);
+    if (k === 'relaysAtRestore') mt.atRestore.textContent = v + ' of ' + (m.relaysOk == null ? '?' : m.relaysOk + (m.relaysFailed || 0));
+    if (k === 'feesSats') mt.fees.textContent = fmt(v) + ' sats';
+    if (k === 'relaysOk' || k === 'relaysFailed') mt.relays.textContent = (m.relaysOk == null ? '?' : m.relaysOk) + ' / ' + (m.relaysFailed == null ? '?' : m.relaysFailed);
+    if (k === 'identityMatch') ck.id.setAttribute('data-s', v ? 'pass' : 'fail');
+    if (k === 'keyMatch') ck.key.setAttribute('data-s', v ? 'pass' : 'fail');
+    if (k === 'verifyPass') ck.verify.setAttribute('data-s', v ? 'pass' : 'fail');
+    if (k === 'fingerprintMatch') ck.fp.setAttribute('data-s', v ? 'pass' : 'fail');
+  }
+  function finish(ok, at){
+    clearInterval(timer);
+    if (at && startedAt) elapsed.textContent = mmss(at - startedAt);
+    track.forEach(function(li){
+      var s = li.getAttribute('data-s');
+      if (ok) li.setAttribute('data-s', 'done'); else if (s === 'active') li.setAttribute('data-s', 'fail');
+    });
+    setState(ok ? 'pass' : 'fail', ok ? 'Passed' : 'Failed');
+    tag.textContent = ok ? 'live output · passed' : 'live output · failed';
+  }
+  function handle(e){
+    if (e.type === 'start') {
+      reset();
+      startedAt = e.at;
+      clearInterval(timer);
+      timer = setInterval(tick, 500);
+      tick();
+      setState('running', 'Running');
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running…';
+    }
+    else if (e.type === 'line') line(e);
+    else if (e.type === 'stage') stage(e.index);
+    else if (e.type === 'metric') metric(e.key, e.value);
+    else if (e.type === 'end') finish(e.ok, e.at);
+    else if (e.type === 'idle') { runBtn.disabled = false; runBtn.textContent = 'Run it again'; }
+  }
+
+  runBtn.addEventListener('click', function(){
+    runBtn.disabled = true;
+    fetch('/api/run', { method: 'POST', headers: { 'x-lifeboat-token': token } }).then(function(r){
+      if (r.status === 202) return;
+      return r.text().then(function(t){ throw new Error(t || ('HTTP ' + r.status)); });
+    }).catch(function(err){
+      setState('fail', err.message);
+      runBtn.disabled = false;
+    });
+  });
+
+  fetch('/api/config').then(function(r){
+    if (!r.ok) throw new Error('no api');
+    return r.json();
+  }).then(function(cfg){
+    token = cfg.token;
+    [].forEach.call(document.querySelectorAll('[data-needs-server]'), function(a){ a.hidden = false; });
+    if (!cfg.drill) {
+      note.textContent = 'The live drill is off here because the console is attached to a running node or the playground, and the drill would wipe that regtest network. Start the server without LND_* variables to use it, or open the Console.';
+      throw new Error('drill disabled');
+    }
+    return fetch('/api/status').then(function(r){ return r.json(); });
+  }).then(function(s){
+    note.textContent = s.dockerOk
+      ? 'Live mode is on. The button runs the real drill on this machine: a throwaway regtest network in Docker, a full wipe, then a restore. It takes about a minute, longer the first time while Docker pulls images.'
+      : "Live mode is on, but Docker isn't running. Start Docker Desktop and reload this page.";
+    runBtn.disabled = !s.dockerOk || s.busy;
+    var es = new EventSource('/api/stream');
+    es.onmessage = function(ev){ handle(JSON.parse(ev.data)); };
+  }).catch(function(){ /* no server: keep the recorded run and the disabled button */ });
+})();
+</script>
+
+<script>
+/* C) HERO — a self-drawn dot globe with relay nodes and packets; no third-party media */
+(function(){
+  var c = document.getElementById('bgCanvas');
+  if (!c || !c.getContext) return;
+  var ctx = c.getContext('2d');
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DPR = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, raf = 0;
+  var N = 1400, pts = [];
+  for (var i = 0; i < N; i++) {
+    var y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963229728653;
+    pts.push([Math.cos(th) * r, y, Math.sin(th) * r]);
+  }
+  function ll(lat, lon){
+    lat *= Math.PI / 180; lon *= Math.PI / 180;
+    return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
+  }
+  var relays = [ll(38, -100), ll(50, 8), ll(8, 78), ll(-28, 135)];
+  var TILT = 0.36;
+  function resize(){
+    var b = c.getBoundingClientRect();
+    W = b.width; H = b.height;
+    c.width = Math.round(W * DPR); c.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  function rot(p, a){
+    var x = p[0] * Math.cos(a) + p[2] * Math.sin(a), z = -p[0] * Math.sin(a) + p[2] * Math.cos(a);
+    var y2 = p[1] * Math.cos(TILT) - z * Math.sin(TILT), z2 = p[1] * Math.sin(TILT) + z * Math.cos(TILT);
+    return [x, y2, z2];
+  }
+  function slerp(a, b, t, lift){
+    var d = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), w = Math.acos(d), sw = Math.sin(w) || 1;
+    var k1 = Math.sin((1 - t) * w) / sw, k2 = Math.sin(t * w) / sw, h = 1 + lift * Math.sin(Math.PI * t);
+    return [(a[0] * k1 + b[0] * k2) * h, (a[1] * k1 + b[1] * k2) * h, (a[2] * k1 + b[2] * k2) * h];
+  }
+  function frame(ms){
+    ctx.clearRect(0, 0, W, H);
+    var R = Math.min(W * 0.46, H * 0.72), cx = W * 0.5, cy = H * 1.02, a = ms * 0.00005;
+    var g = ctx.createRadialGradient(cx, cy, R * 0.86, cx, cy, R * 1.14);
+    g.addColorStop(0, 'rgba(110,80,230,0.32)'); g.addColorStop(0.55, 'rgba(110,80,230,0.10)'); g.addColorStop(1, 'rgba(110,80,230,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.14, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = 'rgba(167,139,250,0.5)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI, 6.2832); ctx.stroke();
+    for (var i = 0; i < N; i++) {
+      var q = rot(pts[i], a);
+      if (q[2] < -0.15) continue;
+      var al = 0.14 + 0.82 * Math.max(0, (q[2] + 0.15) / 1.15), s = 0.7 + 1.5 * al;
+      ctx.fillStyle = 'rgba(167,139,250,' + al.toFixed(3) + ')';
+      ctx.fillRect(cx + q[0] * R - s / 2, cy - q[1] * R - s / 2, s, s);
+    }
+    var pr = relays.map(function(p){ return rot(p, a); });
+    for (var k = 0; k < pr.length; k++) {
+      var A = pr[k], B = pr[(k + 1) % pr.length];
+      if (A[2] < 0 || B[2] < 0) continue;
+      ctx.strokeStyle = 'rgba(196,181,253,0.35)'; ctx.lineWidth = 1; ctx.beginPath();
+      for (var j = 0; j <= 28; j++) {
+        var m = slerp(A, B, j / 28, 0.16);
+        if (j) ctx.lineTo(cx + m[0] * R, cy - m[1] * R); else ctx.moveTo(cx + m[0] * R, cy - m[1] * R);
+      }
+      ctx.stroke();
+      var t = ((ms / 2600) + k * 0.27) % 1, pk = slerp(A, B, t, 0.16);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.arc(cx + pk[0] * R, cy - pk[1] * R, 2.2, 0, 6.2832); ctx.fill();
+    }
+    for (var n = 0; n < pr.length; n++) {
+      var P = pr[n]; if (P[2] < 0) continue;
+      var pulse = 0.5 + 0.5 * Math.sin(ms / 500 + n * 1.7), x = cx + P[0] * R, yy = cy - P[1] * R;
+      ctx.fillStyle = 'rgba(196,181,253,' + (0.12 + 0.12 * pulse).toFixed(3) + ')'; ctx.beginPath(); ctx.arc(x, yy, 9 + 5 * pulse, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, yy, 3, 0, 6.2832); ctx.fill();
+    }
+  }
+  function loop(ms){ frame(ms); raf = requestAnimationFrame(loop); }
+  resize();
+  window.addEventListener('resize', function(){ resize(); if (reduced) frame(0); });
+  if (reduced) { frame(0); return; }
+  raf = requestAnimationFrame(loop);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(loop);
+  });
+})();
+</script>
+</body>
+</html>

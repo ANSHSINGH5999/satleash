@@ -1,0 +1,36 @@
+{
+  "name": "lifeboat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Seed-only Lightning (LND) channel recovery over Nostr: encrypted channel backups on relays, verification against the live node, and a regtest recovery drill",
+  "scripts": {
+    "demo": "tsx src/demo.ts",
+    "web": "tsx src/serve.ts",
+    "daemon": "tsx src/cli.ts backup",
+    "cli": "tsx src/cli.ts",
+    "playground": "tsx src/playground.ts",
+    "demo:check": "tsx src/demo-check.ts",
+    "demo:reset": "tsx src/demo-reset.ts",
+    "playground:open": "tsx src/playground-open.ts",
+    "e2e": "tsx src/e2e.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test --test-force-exit --test-timeout=30000 src/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "nostr-tools": "^2.25.2",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.1",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

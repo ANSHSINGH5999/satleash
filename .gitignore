@@ -1,0 +1,11 @@
+node_modules/
+data/
+.env
+*.log
+*.macaroon
+*.pem
+*.key
+*.crt
+*.cert
+.DS_Store
+!.env.example

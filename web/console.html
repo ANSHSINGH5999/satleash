@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Console — Lifeboat</title>
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23a78bfa' stroke-width='5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;800&amp;display=block">
+<style>
+:root{
+  --bg:#050506; --ink:#ffffff; --soft:#cfcfd6; --dim:#9a9aa3; --accent:#a78bfa;
+  --ok:#7ee2a8; --warn:#f5c26b; --degraded:#ffb37a; --bad:#ff8a8a; --unknown:#9a9aa3;
+  --line:rgba(255,255,255,.09); --surface:rgba(255,255,255,.035); --panel:#181818;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:'PJS','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;min-height:100vh;overflow-x:hidden}
+a{color:inherit}
+a:focus-visible,button:focus-visible,input:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:10px}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:#fff;color:#000;padding:8px 14px;border-radius:10px;z-index:100}
+.skip:focus{left:8px}
+
+.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px clamp(16px,4vw,40px);background:rgba(5,5,6,.85);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;font-size:20px;letter-spacing:.02em;text-decoration:none}
+.crumb{color:var(--dim);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 14px;border:1px solid var(--line);border-radius:15px;background:var(--surface);font-size:13px;font-weight:500;color:var(--soft)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--unknown)}
+[data-s=pass] .dot,.dot.pass{background:var(--ok)} [data-s=warn] .dot,.dot.warn{background:var(--warn)} [data-s=degraded] .dot,.dot.degraded{background:var(--degraded)} [data-s=fail] .dot,.dot.fail{background:var(--bad)} [data-s=unknown] .dot,.dot.unknown{background:var(--unknown)}
+.net{font-size:12px;font-weight:700;letter-spacing:.12em;height:26px;padding:0 12px;border-radius:13px;border:1px solid var(--line);display:inline-flex;align-items:center}
+.net[data-n=regtest]{color:#c4b5fd;border-color:rgba(167,139,250,.5)} .net[data-n=testnet],.net[data-n=testnet4],.net[data-n=signet]{color:var(--warn);border-color:rgba(245,194,107,.5)} .net[data-n=mainnet]{color:#fff;background:#b3261e;border-color:#b3261e} .net[data-n=unknown]{color:var(--dim)}
+.spacer{flex:1}
+.btn{font:inherit;font-size:13px;font-weight:500;height:34px;padding:0 16px;border-radius:17px;border:0;cursor:pointer;background:var(--panel);color:#e8e8e8;transition:background .18s ease;white-space:nowrap}
+.btn:hover:not([disabled]){background:#262626}
+.btn.primary{background:#fdfdfd;color:#050505}.btn.primary:hover:not([disabled]){background:#fff}
+.btn.danger{background:#3a1512;color:#ffd0cc}.btn.danger:hover:not([disabled]){background:#4a1b17}
+.btn.sm{height:28px;padding:0 12px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.banner{display:none;margin:0;padding:12px clamp(16px,4vw,40px);font-size:14px;line-height:1.5}
+.banner.show{display:block}
+.banner.err{background:rgba(255,138,138,.1);border-bottom:1px solid rgba(255,138,138,.4);color:#ffd0d0}
+.banner.main{background:#b3261e;color:#fff;font-weight:500}
+
+.tabs{display:flex;gap:4px;overflow-x:auto;padding:0 clamp(16px,4vw,40px);border-bottom:1px solid var(--line);background:var(--bg);scrollbar-width:thin}
+[role=tab]{font:inherit;font-size:14px;font-weight:500;color:var(--dim);background:none;border:0;border-bottom:2px solid transparent;padding:14px 14px;cursor:pointer;white-space:nowrap}
+[role=tab]:hover{color:#fff}
+[role=tab][aria-selected=true]{color:#fff;border-bottom-color:var(--accent)}
+[role=tab] .badge{display:inline-block;margin-left:6px;width:8px;height:8px;border-radius:50%;background:var(--unknown);vertical-align:middle}
+[role=tab] .badge[data-s=pass]{background:var(--ok)} [role=tab] .badge[data-s=warn]{background:var(--warn)} [role=tab] .badge[data-s=degraded]{background:var(--degraded)} [role=tab] .badge[data-s=fail]{background:var(--bad)}
+
+main{max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,36px) clamp(16px,4vw,40px) 80px}
+[role=tabpanel][hidden]{display:none}
+h1{margin:0 0 6px;font-weight:500;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.025em}
+h2{margin:32px 0 12px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.sub{margin:0 0 24px;color:var(--dim);font-size:15px;font-weight:300;line-height:1.55;max-width:75ch}
+.note{min-height:20px;margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--dim)}
+.note.ok{color:var(--ok)}.note.err{color:var(--bad)}.note .why{display:block;color:var(--soft)}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--surface);min-width:0}
+.card h3{margin:0 0 12px;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.big{font-size:clamp(22px,2.3vw,30px);font-weight:500;letter-spacing:-.02em;line-height:1.1;overflow-wrap:anywhere}
+.meta{margin-top:8px;font-size:13px;line-height:1.55;color:var(--soft);overflow-wrap:anywhere}
+.meta .k{color:var(--dim)}
+
+.list{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:22px 1fr;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.item .ic{font-weight:700;line-height:1.3}
+.item[data-s=pass] .ic{color:var(--ok)}.item[data-s=warn] .ic{color:var(--warn)}.item[data-s=degraded] .ic{color:var(--degraded)}.item[data-s=fail] .ic{color:var(--bad)}.item[data-s=unknown] .ic{color:var(--unknown)}
+.item b{display:block;font-weight:500;font-size:15px;margin-bottom:3px}
+.item span{display:block;font-size:13.5px;line-height:1.55;color:var(--soft);font-weight:300}
+.item b span{display:inline}
+.item b .t{font-size:15px;color:#fff;font-weight:500}
+.item .fix{margin-top:6px;color:var(--dim)}
+.status-word{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-left:8px}
+.item[data-s=pass] .status-word{color:var(--ok)}.item[data-s=warn] .status-word{color:var(--warn)}.item[data-s=degraded] .status-word{color:var(--degraded)}.item[data-s=fail] .status-word{color:var(--bad)}.item[data-s=unknown] .status-word{color:var(--unknown)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+caption{text-align:left;padding:12px 16px;color:var(--dim);font-size:13px}
+th,td{padding:12px 16px;text-align:left;white-space:nowrap}
+th{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
+td{color:var(--soft);border-bottom:1px solid rgba(255,255,255,.05)}
+tr:last-child td{border-bottom:0}
+td.empty{color:var(--dim);white-space:normal}
+td.wrap{white-space:normal;overflow-wrap:anywhere}
+
+.verdict{display:inline-flex;align-items:center;gap:12px;padding:14px 20px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-size:22px;font-weight:500}
+.verdict[data-s=pass]{border-color:rgba(126,226,168,.5)}.verdict[data-s=degraded]{border-color:rgba(255,179,122,.5)}.verdict[data-s=fail]{border-color:rgba(255,138,138,.5)}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.chip{font:inherit;font-size:12.5px;color:var(--soft);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.chip[aria-pressed=true]{background:#fff;color:#050505;border-color:#fff}
+.logs{max-height:420px;overflow:auto;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);font:12.5px/1.75 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--soft)}
+.logs div{white-space:pre-wrap;overflow-wrap:anywhere}
+.lv-warn{color:var(--warn)}.lv-error{color:var(--bad)}.lv-debug{color:var(--dim)}
+.cat{display:inline-block;min-width:64px;color:var(--accent)}
+
+form.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:0 0 6px}
+label{display:block;font-size:12.5px;color:var(--soft);margin-bottom:6px}
+input[type=text]{font:inherit;font-size:14px;color:#fff;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:12px;padding:9px 12px;min-width:min(420px,100%)}
+input[type=text]::placeholder{color:#7d7d86}
+.confirm{display:none;margin:12px 0;padding:14px 16px;border:1px solid rgba(245,194,107,.5);border-radius:14px;background:rgba(245,194,107,.07);color:#ffe7b8;font-size:14px;line-height:1.55}
+.confirm.show{display:block}
+.confirm .acts{margin-top:10px;display:flex;gap:8px}
+.checkline{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--soft);margin:10px 0}
+.checkline input{margin-top:3px}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:13.5px}
+.kv dt{color:var(--dim)}.kv dd{margin:0;color:var(--soft);overflow-wrap:anywhere}
+
+.empty-state{max-width:720px;margin:40px auto 0;padding:28px;border:1px solid var(--line);border-radius:20px;background:var(--surface)}
+.empty-state h1{font-size:28px}
+.empty-state p{color:var(--soft);font-weight:300;line-height:1.65}
+.cmd{display:block;margin:12px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.4);font-size:12.5px;line-height:1.7;overflow-wrap:anywhere;color:var(--soft)}
+.loading{color:var(--dim);padding:40px 0;text-align:center}
+[hidden]{display:none!important}
+
+@media (max-width:980px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.cards{grid-template-columns:1fr}.top{gap:8px}.crumb{display:none}input[type=text]{min-width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="logo" href="/">Lifeboat</a>
+  <span class="crumb">Console</span>
+  <span class="net" id="net" data-n="unknown" aria-label="Network">NETWORK?</span>
+  <span class="pill" id="health" data-s="unknown" role="status" aria-live="polite"><i class="dot"></i><span id="healthText">Connecting</span></span>
+  <span class="spacer"></span>
+  <button class="btn" id="verifyBtn" type="button" disabled>Verify backup</button>
+  <button class="btn primary" id="publishBtn" type="button" disabled>Publish now</button>
+</header>
+<div class="banner err" id="banner" role="alert"></div>
+<div class="banner main" id="mainnet" role="alert">MAINNET. Lifeboat has only been tested on regtest. Real funds are involved. Read docs/testnet-checklist.md before relying on this.</div>
+
+<nav class="tabs" role="tablist" aria-label="Console sections" id="tabs" hidden>
+  <button role="tab" id="tab-dashboard" aria-controls="p-dashboard" aria-selected="true" tabindex="0" type="button">Dashboard<span class="badge" data-s="unknown" id="b-dashboard"></span></button>
+  <button role="tab" id="tab-backup" aria-controls="p-backup" aria-selected="false" tabindex="-1" type="button">Backup</button>
+  <button role="tab" id="tab-verify" aria-controls="p-verify" aria-selected="false" tabindex="-1" type="button">Verify<span class="badge" data-s="unknown" id="b-verify"></span></button>
+  <button role="tab" id="tab-relays" aria-controls="p-relays" aria-selected="false" tabindex="-1" type="button">Relays<span class="badge" data-s="unknown" id="b-relays"></span></button>
+  <button role="tab" id="tab-node" aria-controls="p-node" aria-selected="false" tabindex="-1" type="button">Node<span class="badge" data-s="unknown" id="b-node"></span></button>
+  <button role="tab" id="tab-security" aria-controls="p-security" aria-selected="false" tabindex="-1" type="button">Security<span class="badge" data-s="unknown" id="b-security"></span></button>
+  <button role="tab" id="tab-activity" aria-controls="p-activity" aria-selected="false" tabindex="-1" type="button">Activity</button>
+  <button role="tab" id="tab-settings" aria-controls="p-settings" aria-selected="false" tabindex="-1" type="button">Settings</button>
+</nav>
+
+<main id="main" tabindex="-1">
+  <p class="loading" id="loading" role="status">Loading the latest state from the server…</p>
+
+  <section class="empty-state" id="empty" hidden>
+    <h1>No lnd node connected</h1>
+    <p>The console shows live data from a real node: channels, the backup on your Nostr relays, relay health and security checks. Start the server with your node's details:</p>
+    <code class="cmd">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=&lt;macaroon file&gt; RELAYS=wss://relay-one.example,wss://relay-two.example npm run web</code>
+    <p>Or run the regtest playground, which builds a throwaway network with channels and connects this console to it:</p>
+    <code class="cmd">npm run playground</code>
+    <p><a href="/#proof">Back to the disaster drill</a></p>
+  </section>
+
+  <div id="live" hidden>
+    <p class="note" id="actionNote" role="status" aria-live="polite"></p>
+
+    <section role="tabpanel" id="p-dashboard" aria-labelledby="tab-dashboard">
+      <h1>Recovery readiness</h1>
+      <p class="sub">Evidence, not a score. Each line is measured from the node, the relays or the last verification.</p>
+      <div class="list" id="readiness"></div>
+      <h2>Key numbers</h2>
+      <div class="cards">
+        <div class="card"><h3>Last backup</h3><div class="big" id="dAge">—</div><div class="meta" id="dAgeMeta"></div></div>
+        <div class="card"><h3>Relay redundancy</h3><div class="big" id="dRelays">—</div><div class="meta" id="dRelaysMeta"></div></div>
+        <div class="card"><h3>Verification</h3><div class="big" id="dVerify">—</div><div class="meta" id="dVerifyMeta"></div></div>
+        <div class="card"><h3>Channels</h3><div class="big" id="dChan">—</div><div class="meta" id="dChanMeta"></div></div>
+        <div class="card"><h3>Backup size</h3><div class="big" id="dSize">—</div><div class="meta" id="dSizeMeta"></div></div>
+        <div class="card"><h3>Publish time</h3><div class="big" id="dPub">—</div><div class="meta">how long the last publish took</div></div>
+        <div class="card" style="grid-column:span 2"><h3>Backup fingerprint</h3><div class="big mono" id="dFp" style="font-size:14px;line-height:1.5">—</div><div class="meta">Identifies the exact set of channels a backup covers. Ciphertext differs on every export, so the fingerprint is what is compared.</div></div>
+      </div>
+      <p class="note">Latest drill: run it from the <a href="/#proof">landing page</a> on a server without a node attached. Drill results are not stored between sessions.</p>
+    </section>
+
+    <section role="tabpanel" id="p-backup" aria-labelledby="tab-backup" hidden>
+      <h1>Backup</h1>
+      <p class="sub">The backup pipeline: export from lnd, encrypt, publish to every enabled relay. History below covers this session only; nothing is stored on disk.</p>
+      <div class="cards">
+        <div class="card"><h3>Pipeline state</h3><div class="big" id="bState">—</div><div class="meta" id="bStateMeta"></div></div>
+        <div class="card"><h3>Publishes</h3><div class="big" id="bCount">—</div><div class="meta" id="bCountMeta"></div></div>
+        <div class="card" style="grid-column:span 2"><h3>Nostr backup key</h3><div class="big mono" id="npub" style="font-size:14px;line-height:1.5">—</div><div class="meta"><button class="btn sm" id="copyKey" type="button" disabled>Copy key</button> <span class="k">derived from your seed through lnd, never stored</span></div></div>
+      </div>
+      <h2>Publish history (this session)</h2>
+      <div class="tablewrap"><table><caption class="sr">Backups published during this session</caption>
+        <thead><tr><th scope="col">When</th><th scope="col">Channels</th><th scope="col">Size</th><th scope="col">Took</th><th scope="col">Relays accepted</th><th scope="col">Fingerprint</th></tr></thead>
+        <tbody id="histRows"></tbody></table></div>
+    </section>
+
+    <section role="tabpanel" id="p-verify" aria-labelledby="tab-verify" hidden>
+      <h1>Verify</h1>
+      <p class="sub">A restore dry run. The backup is fetched from every relay, its author and signature are checked, it is decrypted with the seed-derived key and compared with the node's current channels. Nothing is written to lnd.</p>
+      <div class="verdict" id="vVerdict" data-s="unknown"><i class="dot" style="width:14px;height:14px"></i><span id="vVerdictText">Not verified yet</span></div>
+      <p class="note" id="vMeta"></p>
+      <h2>What was checked</h2>
+      <div class="list" id="vChecks"></div>
+      <h2>Findings</h2>
+      <div class="list" id="vProblems"></div>
+      <h2>Per relay</h2>
+      <div class="tablewrap"><table><caption class="sr">Verification result per relay</caption>
+        <thead><tr><th scope="col">Relay</th><th scope="col">State</th><th scope="col">Latency</th><th scope="col">Newest event</th><th scope="col">Foreign events</th></tr></thead>
+        <tbody id="vRows"></tbody></table></div>
+      <p class="note">Disagreement between relays is reported as facts (missing, stale, foreign events). It is not treated as proof of malice.</p>
+      <p><button class="btn primary" id="verifyBtn2" type="button" disabled>Run verification</button></p>
+    </section>
+
+    <section role="tabpanel" id="p-relays" aria-labelledby="tab-relays" hidden>
+      <h1>Relays</h1>
+      <p class="sub">Changes here last until the server restarts. Set RELAYS to make them permanent. At least one relay always stays enabled.</p>
+      <div class="tablewrap"><table><caption class="sr">Configured relays</caption>
+        <thead><tr><th scope="col">Relay</th><th scope="col">Enabled</th><th scope="col">State</th><th scope="col">Latency</th><th scope="col">Newest event</th><th scope="col">Actions</th></tr></thead>
+        <tbody id="rRows"></tbody></table></div>
+      <h2>Add a relay</h2>
+      <form class="row" id="addForm" autocomplete="off">
+        <div><label for="addUrl">Relay URL (wss:// recommended)</label><input type="text" id="addUrl" placeholder="wss://relay.example" inputmode="url" spellcheck="false"></div>
+        <button class="btn primary" id="addBtn" type="submit" disabled>Add relay</button>
+      </form>
+      <div class="confirm" id="addConfirm" role="alertdialog" aria-labelledby="addConfirmText"><span id="addConfirmText"></span>
+        <div class="acts"><button class="btn danger sm" id="addYes" type="button">Add anyway</button><button class="btn sm" id="addNo" type="button">Cancel</button></div></div>
+      <h2>Public relay test</h2>
+      <p class="sub">Checks that a public relay accepts, serves and (optionally) deletes an event, without involving your backup. It publishes ONE encrypted dummy event signed by a throwaway key in its own namespace, reads it back, verifies the signature, then asks the relay to delete it. Your real backup, key and node data are never used.</p>
+      <form class="row" id="testForm" autocomplete="off">
+        <div><label for="testUrl">Relay URL</label><input type="text" id="testUrl" placeholder="wss://relay.example" inputmode="url" spellcheck="false"></div>
+        <button class="btn" id="testBtn" type="submit" disabled>Run public relay test</button>
+      </form>
+      <label class="checkline"><input type="checkbox" id="testAck"><span>I understand this sends one encrypted dummy event to third-party infrastructure that I do not control.</span></label>
+      <div class="list" id="testResult"></div>
+    </section>
+
+    <section role="tabpanel" id="p-node" aria-labelledby="tab-node" hidden>
+      <h1>Node</h1>
+      <p class="sub">What lnd reports, read through the macaroon this console holds.</p>
+      <div class="cards">
+        <div class="card"><h3>Connection</h3><div class="big" id="nConn">—</div><div class="meta" id="nConnMeta"></div></div>
+        <div class="card"><h3>Chain</h3><div class="big" id="nSync">—</div><div class="meta" id="nSyncMeta"></div></div>
+        <div class="card"><h3>Channels</h3><div class="big" id="nChan">—</div><div class="meta" id="nChanMeta"></div></div>
+        <div class="card"><h3>Macaroon</h3><div class="big" id="nMac">—</div><div class="meta" id="nMacMeta"></div></div>
+      </div>
+      <h2>Identity</h2>
+      <dl class="kv" id="nKv"></dl>
+    </section>
+
+    <section role="tabpanel" id="p-security" aria-labelledby="tab-security" hidden>
+      <h1>Security</h1>
+      <p class="sub">Every status below is derived from live state. PASS: shown to be fine. WARNING: advisory. DEGRADED: working with less margin. FAILED: not working. UNKNOWN: not measured yet.</p>
+      <div class="list" id="checks"></div>
+    </section>
+
+    <section role="tabpanel" id="p-activity" aria-labelledby="tab-activity" hidden>
+      <h1>Activity</h1>
+      <p class="sub">Structured events from this session. Secrets are redacted before they are recorded.</p>
+      <div class="chips" role="group" aria-label="Filter by category" id="cats"></div>
+      <div class="logs" id="logs" tabindex="0" aria-label="Recent activity"></div>
+    </section>
+
+    <section role="tabpanel" id="p-settings" aria-labelledby="tab-settings" hidden>
+      <h1>Settings</h1>
+      <p class="sub">Read-only. Lifeboat is configured through environment variables and stores nothing on disk.</p>
+      <dl class="kv" id="sKv"></dl>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var token = null, busy = false, failures = 0, last = null, catFilter = 'all', pendingAdd = null;
+
+  // every value that came from lnd, relays or logs is written with textContent, never as HTML
+  function el(tag, props){
+    var n = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function(k){
+      if (k === 'text') n.textContent = props[k]; else if (k === 'cls') n.className = props[k]; else n.setAttribute(k, props[k]);
+    });
+    for (var i = 2; i < arguments.length; i++) if (arguments[i]) n.appendChild(arguments[i]);
+    return n;
+  }
+  function clear(n){ while (n.firstChild) n.removeChild(n.firstChild); }
+  function fmt(n){ return Number(n).toLocaleString('en-US'); }
+  function short(s, a, b){ return s && s.length > a + b + 1 ? s.slice(0, a) + '…' + s.slice(-b) : (s || '—'); }
+  function ago(ms){
+    var s = Math.max(0, Math.round(ms / 1000));
+    return s < 90 ? s + 's ago' : s < 5400 ? Math.round(s / 60) + 'm ago' : s < 172800 ? Math.round(s / 3600) + 'h ago' : Math.round(s / 86400) + 'd ago';
+  }
+  function bytes(n){ return n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB'; }
+  var WORD = { pass: 'PASS', warn: 'WARNING', degraded: 'DEGRADED', fail: 'FAILED', unknown: 'UNKNOWN' };
+  var ICON = { pass: '✓', warn: '!', degraded: '◐', fail: '✕', unknown: '?' };
+  function kv(dl, rows){ clear(dl); rows.forEach(function(r){ dl.appendChild(el('dt', { text: r[0] })); dl.appendChild(el('dd', { text: r[1] })); }); }
+  function meta(n, rows){ clear(n); rows.forEach(function(r){ n.appendChild(el('div', null, el('span', { cls: 'k', text: r[0] + '  ' }), el('span', { text: r[1] }))); }); }
+  function item(s, title, detail, fix){
+    var body = el('div', null, el('b', null, el('span', { cls: 't', text: title }), el('span', { cls: 'status-word', text: WORD[s] || s })), el('span', { text: detail }));
+    if (fix) body.appendChild(el('span', { cls: 'fix', text: 'Fix: ' + fix }));
+    return el('div', { cls: 'item', 'data-s': s }, el('span', { cls: 'ic', 'aria-hidden': 'true', text: ICON[s] || '?' }), body);
+  }
+  function setHealth(s, text){ var h = $('health'); h.setAttribute('data-s', s || 'unknown'); $('healthText').textContent = text; }
+  function banner(msg){ var b = $('banner'); b.textContent = msg || ''; b.classList.toggle('show', !!msg); }
+  function note(msg, kind, why){
+    var n = $('actionNote'); clear(n); n.className = 'note' + (kind ? ' ' + kind : '');
+    if (msg) n.appendChild(document.createTextNode(msg));
+    (why || []).forEach(function(w){ if (w) n.appendChild(el('span', { cls: 'why', text: w })); });
+  }
+  function explained(j, label){
+    var m = label + (j.error ? ': ' + j.error : '');
+    return [m, [j.cause && 'Why: ' + j.cause, j.impact && 'Impact: ' + j.impact, j.action && 'What to do: ' + j.action, j.requestId && 'Request id: ' + j.requestId]];
+  }
+
+  /* ---------- tabs ---------- */
+  var TABS = ['dashboard', 'backup', 'verify', 'relays', 'node', 'security', 'activity', 'settings'];
+  function show(name){
+    if (TABS.indexOf(name) < 0) name = 'dashboard';
+    TABS.forEach(function(t){
+      var sel = t === name;
+      $('tab-' + t).setAttribute('aria-selected', sel ? 'true' : 'false');
+      $('tab-' + t).setAttribute('tabindex', sel ? '0' : '-1');
+      $('p-' + t).hidden = !sel;
+    });
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+  }
+  TABS.forEach(function(t, i){
+    $('tab-' + t).addEventListener('click', function(){ show(t); });
+    $('tab-' + t).addEventListener('keydown', function(e){
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : e.key === 'Home' ? -i : e.key === 'End' ? TABS.length : 0;
+      if (!d) return;
+      e.preventDefault();
+      var j = e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : (i + d + TABS.length) % TABS.length;
+      show(TABS[j]); $('tab-' + TABS[j]).focus();
+    });
+  });
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+
+  /* ---------- render ---------- */
+  function rel(s, ts){ return ts ? ago(s.now - ts * 1000) : '—'; }
+  function relayRow(url, verify){ return verify ? verify.relays.filter(function(r){ return r.url === url; })[0] : null; }
+  function stateWord(r){ return !r ? 'not probed' : r.state === 'healthy' ? 'holds the latest' : r.state === 'stale' ? 'holds an older backup' : r.state === 'missing' ? 'holds no backup' : (r.error || 'unreachable'); }
+  function stateS(r){ return !r ? 'unknown' : r.state === 'healthy' ? 'pass' : r.state === 'down' ? 'fail' : 'degraded'; }
+  function badge(id, status){ var b = $(id); if (b) b.setAttribute('data-s', status); }
+  function checkStatus(s, id){ var c = s.security.checks.filter(function(x){ return x.id === id; })[0]; return c ? c.status : 'unknown'; }
+
+  function render(s){
+    last = s;
+    $('loading').hidden = true; $('empty').hidden = true; $('live').hidden = false; $('tabs').hidden = false;
+    var node = s.node, ch = s.channels, bk = s.backup, v = s.verify, now = s.now, lp = bk.lastPublish;
+    var net = node.network || 'unknown';
+    var n = $('net'); n.textContent = net.toUpperCase(); n.setAttribute('data-n', net);
+    $('mainnet').classList.toggle('show', net === 'mainnet');
+
+    var worst = s.security.worst;
+    setHealth(worst, worst === 'pass' ? 'Healthy' : worst === 'warn' ? 'Needs attention' : worst === 'degraded' ? 'Degraded' : worst === 'fail' ? 'Action needed' : 'Checking');
+    badge('b-dashboard', worst); badge('b-security', worst);
+    badge('b-verify', v ? (v.verdict === 'verified' ? 'pass' : v.verdict === 'degraded' ? 'degraded' : 'fail') : 'unknown');
+    var reachable = v ? v.relays.filter(function(r){ return r.reachable; }).length : null;
+    badge('b-relays', checkStatus(s, 'relays'));
+    badge('b-node', checkStatus(s, 'lnd'));
+
+    /* dashboard: readiness evidence */
+    var rd = $('readiness'); clear(rd);
+    var holding = v ? v.relays.filter(function(r){ return r.state === 'healthy'; }).length : null;
+    var total = s.relays.filter(function(r){ return r.enabled; }).length;
+    rd.appendChild(item(holding === null ? 'unknown' : holding >= 2 ? 'pass' : holding === 1 ? 'degraded' : 'fail', 'The newest backup is held by ' + (holding === null ? '?' : holding) + ' of ' + total + ' relays', holding === null ? 'Relays have not been probed yet.' : holding >= 2 ? 'At least two independent copies exist.' : 'Fewer than two relays hold the latest backup.'));
+    rd.appendChild(item(v ? (v.verdict === 'verified' ? 'pass' : v.verdict === 'degraded' ? 'degraded' : 'fail') : 'unknown', 'Verification: ' + (v ? v.verdict.toUpperCase() : 'not run yet'), v ? 'Checked ' + ago(now - v.checkedAt) + '. ' + (v.problems.length ? v.problems.join('; ') : 'No caveats.') : 'The first verification runs shortly after start.'));
+    rd.appendChild(item(v && v.matchesCurrent !== undefined ? (v.matchesCurrent ? 'pass' : 'warn') : 'unknown', "The backup matches the node's current channels", v && v.fingerprint ? 'Fingerprint ' + short(v.fingerprint, 12, 8) + ' covers ' + v.channelsCurrent + ' channel(s).' : 'No comparison available yet.'));
+    rd.appendChild(item(checkStatus(s, 'macaroon'), s.macaroon.canSpend === false ? 'The daemon macaroon cannot spend funds' : s.macaroon.canSpend === true ? 'The daemon macaroon CAN spend funds' : 'Macaroon privileges unknown', 'Asked of lnd itself, not assumed.'));
+    rd.appendChild(item(checkStatus(s, 'state'), 'Backup pipeline: ' + bk.state, bk.lastError ? bk.lastError.message : 'Publishes on every channel change and refreshes periodically.'));
+
+    $('dAge').textContent = lp ? ago(now - lp.at) : 'none yet';
+    meta($('dAgeMeta'), lp ? [['channels', String(lp.channels)], ['relays', lp.relaysOk.length + ' accepted' + (lp.relaysFailed.length ? ', ' + lp.relaysFailed.length + ' failed' : '')]] : []);
+    $('dRelays').textContent = holding === null ? '—' : holding + ' / ' + total;
+    meta($('dRelaysMeta'), [['reachable', reachable === null ? 'not probed' : reachable + ' of ' + total]]);
+    $('dVerify').textContent = v ? v.verdict.toUpperCase() : 'PENDING';
+    meta($('dVerifyMeta'), v ? [['checked', ago(now - v.checkedAt)]] : []);
+    $('dChan').textContent = ch ? ch.active + ' / ' + ch.total : '—';
+    meta($('dChanMeta'), ch ? [['local', fmt(ch.localSats) + ' sats'], ['pending', String(ch.pending)]] : []);
+    $('dSize').textContent = lp ? bytes(lp.bytes) : '—';
+    meta($('dSizeMeta'), lp ? [['ciphertext', 'NIP-44 padded']] : []);
+    $('dPub').textContent = lp ? lp.durationMs + ' ms' : '—';
+    $('dFp').textContent = (lp && lp.fingerprint) || (v && v.fingerprint) || '—';
+
+    /* backup */
+    $('bState').textContent = bk.state;
+    meta($('bStateMeta'), [['stream', bk.streamConnected ? 'connected' : 'not connected'], ['retry', bk.retryPending ? 'in about ' + Math.round((bk.nextRetryMs || 0) / 1000) + 's' : 'none pending']]);
+    $('bCount').textContent = String(bk.publishes);
+    meta($('bCountMeta'), [['failures', String(bk.failures)], ['invalid transitions', String(bk.invalidTransitions)]]);
+    $('npub').textContent = s.nostr.pubkey ? s.nostr.pubkey : '—';
+    $('copyKey').disabled = !s.nostr.pubkey;
+    var hr = $('histRows'); clear(hr);
+    if (!bk.history.length) hr.appendChild(el('tr', null, el('td', { cls: 'empty', colspan: '6', text: 'Nothing published in this session yet.' })));
+    bk.history.slice().reverse().forEach(function(h){
+      hr.appendChild(el('tr', null, el('td', { text: ago(now - h.at) }), el('td', { text: String(h.channels) }), el('td', { text: bytes(h.bytes) }), el('td', { text: h.durationMs + ' ms' }),
+        el('td', { text: h.relaysOk.length + ' of ' + (h.relaysOk.length + h.relaysFailed.length) }), el('td', { cls: 'mono', text: short(h.fingerprint, 8, 6) })));
+    });
+
+    /* verify */
+    var vv = $('vVerdict'); var vs = v ? (v.verdict === 'verified' ? 'pass' : v.verdict === 'degraded' ? 'degraded' : 'fail') : 'unknown';
+    vv.setAttribute('data-s', vs); $('vVerdictText').textContent = v ? v.verdict.toUpperCase() : 'Not verified yet';
+    $('vMeta').textContent = v ? 'Checked ' + ago(now - v.checkedAt) + (v.ageSec !== undefined ? '. Newest backup is ' + ago(v.ageSec * 1000).replace(' ago', '') + ' old' : '') + '.' : '';
+    var vc = $('vChecks'); clear(vc);
+    (function(){
+      var found = !!v && v.createdAt !== undefined;
+      var held = v ? v.relays.filter(function(r){ return r.state === 'healthy'; }).length : 0;
+      vc.appendChild(item(!v ? 'unknown' : found ? 'pass' : 'fail', 'Author and signature', !v ? 'Not verified yet.' : found ? 'The newest backup was signed by the key derived from your seed; events by other keys or with a bad signature were ignored.' : 'No backup signed by your key was found on any reachable relay.'));
+      vc.appendChild(item(!v ? 'unknown' : v.lndValidated === undefined ? (found ? 'unknown' : 'fail') : v.lndValidated ? 'pass' : 'fail', 'Backup accepted by lnd', !v ? 'Not verified yet.' : v.lndValidated === undefined ? 'lnd was not asked to validate the copy.' : v.lndValidated ? 'lnd decrypted the relay copy with this node\'s key and found ' + v.channelsInBackup + ' channel(s) inside.' : 'lnd could not decrypt the relay copy.'));
+      vc.appendChild(item(!v ? 'unknown' : v.matchesCurrent === undefined ? 'unknown' : v.matchesCurrent ? 'pass' : 'warn', 'Channel set matches the node', !v ? 'Not verified yet.' : v.matchesCurrent === undefined ? 'Could not compare.' : v.matchesCurrent ? 'The relay copy covers exactly the ' + v.channelsCurrent + ' channel(s) the node has now' + (v.fingerprint ? ' (fingerprint ' + short(v.fingerprint, 8, 6) + ').' : '.') : 'The relay copy does not cover the channels the node has now.'));
+      vc.appendChild(item(!v ? 'unknown' : held === 0 ? 'fail' : held < v.relays.length ? 'degraded' : 'pass', 'Relay redundancy', !v ? 'Not verified yet.' : held + ' of ' + v.relays.length + ' relay(s) hold the newest backup.'));
+    })();
+    var vp = $('vProblems'); clear(vp);
+    if (v) (v.problems.length ? v.problems : ['Backup exists, is authentic, decrypts, is valid, matches the node, and every reachable relay holds it.']).forEach(function(p){ vp.appendChild(item(v.problems.length ? (v.ok ? 'degraded' : 'fail') : 'pass', p, '')); });
+    var vr = $('vRows'); clear(vr);
+    if (!v) vr.appendChild(el('tr', null, el('td', { cls: 'empty', colspan: '5', text: 'Not probed yet. The first check runs shortly after start.' })));
+    else v.relays.forEach(function(r){
+      vr.appendChild(el('tr', null, el('td', { cls: 'mono wrap', text: r.url }), el('td', null, el('span', { cls: 'pill', 'data-s': stateS(r) }, el('i', { cls: 'dot' }), el('span', { text: stateWord(r) }))),
+        el('td', { text: r.latencyMs != null ? r.latencyMs + ' ms' : '—' }), el('td', { text: rel(s, r.createdAt) }), el('td', { text: String(r.foreignEvents) })));
+    });
+
+    /* relays */
+    var rr = $('rRows'); clear(rr);
+    s.relays.forEach(function(r){
+      var vh = relayRow(r.url, v);
+      var acts = el('td', null);
+      var tg = el('button', { cls: 'btn sm', type: 'button', text: r.enabled ? 'Disable' : 'Enable', 'aria-label': (r.enabled ? 'Disable ' : 'Enable ') + r.url });
+      tg.addEventListener('click', function(){ relayAction(r.enabled ? 'disable' : 'enable', r.url); });
+      var rm = el('button', { cls: 'btn sm danger', type: 'button', text: 'Remove', 'aria-label': 'Remove ' + r.url });
+      rm.addEventListener('click', function(){ relayAction('remove', r.url); });
+      var ts = el('button', { cls: 'btn sm', type: 'button', text: 'Test', 'aria-label': 'Test ' + r.url });
+      ts.addEventListener('click', function(){ relayAction('test', r.url); });
+      [ts, tg, rm].forEach(function(b){ acts.appendChild(b); acts.appendChild(document.createTextNode(' ')); });
+      rr.appendChild(el('tr', null, el('td', { cls: 'mono wrap', text: r.url + (r.session ? '  (added this session)' : '') }), el('td', { text: r.enabled ? 'yes' : 'no' }),
+        el('td', null, el('span', { cls: 'pill', 'data-s': r.enabled ? stateS(vh) : 'unknown' }, el('i', { cls: 'dot' }), el('span', { text: r.enabled ? stateWord(vh) : 'disabled' }))),
+        el('td', { text: vh && vh.latencyMs != null ? vh.latencyMs + ' ms' : '—' }), el('td', { text: vh ? rel(s, vh.createdAt) : '—' }), acts));
+    });
+
+    /* node */
+    $('nConn').textContent = node.connected ? 'Connected' : 'Offline';
+    meta($('nConnMeta'), [['network', net.toUpperCase()], ['lnd', node.version ? node.version.split(' ')[0] : '—']].concat(node.error ? [['error', node.error]] : []));
+    $('nSync').textContent = node.synced === undefined ? '—' : node.synced ? 'Synced' : 'Syncing';
+    meta($('nSyncMeta'), [['height', node.blockHeight != null ? fmt(node.blockHeight) : '—']]);
+    $('nChan').textContent = ch ? ch.active + ' / ' + ch.total : '—';
+    meta($('nChanMeta'), ch ? [['pending close', String(ch.pending)], ['local', fmt(ch.localSats) + ' sats'], ['remote', fmt(ch.remoteSats) + ' sats']] : []);
+    $('nMac').textContent = s.macaroon.canSpend === false ? 'Read-only' : s.macaroon.canSpend === true ? 'CAN SPEND' : 'Unknown';
+    meta($('nMacMeta'), [['file', s.macaroon.file || '—'], ['file mode', s.macaroon.fileLoose === null ? 'not checked' : s.macaroon.fileLoose ? 'readable by others' : 'owner only'], ['lifeboat needs', (s.macaroon.needs || []).join(' ') || '\u2014']]);
+    kv($('nKv'), [['Alias', node.alias || '—'], ['Identity pubkey', node.pubkey || '—'], ['Network', net.toUpperCase()], ['Nostr backup key', s.nostr.pubkey || '—']]);
+
+    /* security */
+    var cl = $('checks'); clear(cl);
+    s.security.checks.forEach(function(c){ cl.appendChild(item(c.status, c.title, c.detail, c.fix)); });
+
+    /* activity */
+    var cats = ['all'];
+    s.logs.forEach(function(l){ var c = (l.fields && l.fields.category) || 'other'; if (cats.indexOf(c) < 0) cats.push(c); });
+    var ce = $('cats'); clear(ce);
+    cats.forEach(function(c){
+      var b = el('button', { cls: 'chip', type: 'button', text: c, 'aria-pressed': String(c === catFilter) });
+      b.addEventListener('click', function(){ catFilter = c; if (last) render(last); });
+      ce.appendChild(b);
+    });
+    var lg = $('logs'); var stick = lg.scrollTop + lg.clientHeight >= lg.scrollHeight - 24; clear(lg);
+    s.logs.filter(function(l){ return catFilter === 'all' || ((l.fields && l.fields.category) || 'other') === catFilter; }).forEach(function(l){
+      var f = {}; if (l.fields) Object.keys(l.fields).forEach(function(k){ if (k !== 'category') f[k] = l.fields[k]; });
+      var extra = Object.keys(f).length ? ' ' + JSON.stringify(f) : '';
+      lg.appendChild(el('div', { cls: 'lv-' + l.level }, el('span', { text: l.t.slice(11, 19) + ' ' + l.level.toUpperCase().padEnd(5) + ' ' }), el('span', { cls: 'cat', text: (l.fields && l.fields.category) || 'other' }), el('span', { text: ' ' + l.msg + extra })));
+    });
+    if (stick) lg.scrollTop = lg.scrollHeight;
+
+    /* settings */
+    kv($('sKv'), [['Relays in use', s.config.relays.join(', ')], ['Backup considered stale after', Math.round(s.config.staleAfterSec / 3600 * 10) / 10 + ' h'], ['Network', net.toUpperCase()], ['Storage', 'none: state is in memory, the durable copy is on the relays'], ['Console requests refused', String((s.console && s.console.blockedRequests) || 0)]]);
+
+    ['verifyBtn', 'verifyBtn2', 'publishBtn', 'addBtn', 'testBtn'].forEach(function(id){ var b = $(id); if (b) b.disabled = busy || (id === 'addBtn' && !$('addUrl').value.trim()) || (id === 'testBtn' && !($('testUrl').value.trim() && $('testAck').checked)); });
+  }
+
+  function poll(){
+    fetch('/api/monitor', { cache: 'no-store' }).then(function(r){
+      if (r.status === 404) { $('loading').hidden = true; $('live').hidden = true; $('tabs').hidden = true; $('empty').hidden = false; setHealth('unknown', 'No node'); banner(''); return null; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(s){ if (s) { failures = 0; banner(''); render(s); } })
+      .catch(function(){ failures++; if (failures >= 2) { banner('Lost connection to the Lifeboat server. Retrying… The last known state is still shown.'); setHealth('fail', 'Offline'); } })
+      .then(function(){ setTimeout(poll, 3000); });
+  }
+
+  /* ---------- actions ---------- */
+  function post(path, body){
+    var h = { 'x-lifeboat-token': token };
+    if (body) h['content-type'] = 'application/json';
+    return fetch(path, { method: 'POST', headers: h, body: body ? JSON.stringify(body) : undefined }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){ return { ok: r.ok, status: r.status, j: j }; });
+    });
+  }
+  function act(path, label, okMsg){
+    if (busy || !token) return;
+    busy = true; if (last) render(last); note(label + '…');
+    post(path).then(function(x){
+      if (!x.ok) { var e = explained(x.j, label + ' failed'); note(e[0], 'err', e[1]); }
+      else note(okMsg(x.j), 'ok');
+    }, function(e){ note(label + ' failed: ' + e.message, 'err'); }).then(function(){ busy = false; if (last) render(last); });
+  }
+  function verifyAct(){ act('/api/monitor/verify', 'Verifying', function(j){ return j.verdict === 'verified' ? 'Verified: the backup on the relays decrypts and matches the node.' : 'Verification: ' + (j.verdict || '?').toUpperCase() + '. ' + (j.problems || []).join('; '); }); }
+  $('verifyBtn').addEventListener('click', verifyAct);
+  $('verifyBtn2').addEventListener('click', verifyAct);
+  $('publishBtn').addEventListener('click', function(){ act('/api/monitor/publish', 'Publishing', function(j){ return j ? 'Published to ' + j.relaysOk.length + ' relay(s) in ' + j.durationMs + ' ms.' : 'Nothing to publish.'; }); });
+  $('copyKey').addEventListener('click', function(){
+    var t = $('npub').textContent, b = $('copyKey');
+    function done(ok){ b.textContent = ok ? 'Copied' : 'Select and copy manually'; setTimeout(function(){ b.textContent = 'Copy key'; }, 1600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ done(true); }, function(){ done(false); });
+    else done(false);
+  });
+
+  function relayAction(action, url, confirm){
+    if (busy || !token) return;
+    busy = true; if (last) render(last);
+    post('/api/relays', { action: action, url: url, confirm: confirm === true ? true : undefined }).then(function(x){
+      if (x.j && x.j.needsConfirm) { pendingAdd = url; $('addConfirmText').textContent = x.j.warning; $('addConfirm').classList.add('show'); $('addYes').focus(); note(''); return; }
+      if (!x.ok) { var e = explained(x.j, 'Relay ' + action + ' failed'); note(e[0], 'err', e[1]); return; }
+      $('addConfirm').classList.remove('show'); pendingAdd = null;
+      if (action === 'test') note('Test of ' + x.j.url + ': ' + (x.j.reachable ? 'reachable in ' + x.j.latencyMs + ' ms' + (x.j.holdsBackup ? ', holds a backup event' : ', holds no backup event yet') : 'unreachable (' + (x.j.error || 'no answer') + ')'), x.j.reachable ? 'ok' : 'err');
+      else { note('Relay ' + action + ' done. It applies until the server restarts.', 'ok'); if (action === 'add') $('addUrl').value = ''; }
+    }, function(e){ note('Relay ' + action + ' failed: ' + e.message, 'err'); }).then(function(){ busy = false; poll(); });
+  }
+  $('addUrl').addEventListener('input', function(){ $('addBtn').disabled = busy || !$('addUrl').value.trim(); });
+  $('addForm').addEventListener('submit', function(e){ e.preventDefault(); relayAction('add', $('addUrl').value.trim()); });
+  $('addYes').addEventListener('click', function(){ if (pendingAdd) relayAction('add', pendingAdd, true); });
+  $('addNo').addEventListener('click', function(){ pendingAdd = null; $('addConfirm').classList.remove('show'); $('addUrl').focus(); });
+
+  function syncTestBtn(){ $('testBtn').disabled = busy || !($('testUrl').value.trim() && $('testAck').checked); }
+  $('testUrl').addEventListener('input', syncTestBtn);
+  $('testAck').addEventListener('change', syncTestBtn);
+  $('testForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    if (busy || !$('testAck').checked) return;
+    busy = true; syncTestBtn(); note('Running the public relay test…'); clear($('testResult'));
+    post('/api/relays/test-public', { url: $('testUrl').value.trim(), confirm: true }).then(function(x){
+      if (!x.ok) { var ex = explained(x.j, 'Public relay test failed'); note(ex[0], 'err', ex[1]); return; }
+      var r = x.j, out = $('testResult');
+      function yn(b){ return b === undefined ? 'unknown' : b ? 'pass' : 'fail'; }
+      out.appendChild(item(yn(r.published), 'Published', r.published ? 'The relay accepted the dummy event in ' + r.publishMs + ' ms.' : 'The relay did not accept it.'));
+      out.appendChild(item(yn(r.retrieved), 'Retrieved', r.retrieved ? 'The relay served the event back in ' + r.retrieveMs + ' ms.' : 'The relay did not serve the event that was just published.'));
+      out.appendChild(item(yn(r.signatureValid), 'Signature verified', 'Checked locally against the throwaway key ' + short(r.throwawayPubkey, 10, 6) + '.'));
+      out.appendChild(item(yn(r.decrypted), 'Decrypted', 'The payload decrypted to exactly the dummy that was sent.'));
+      out.appendChild(item(yn(r.payloadValid), 'Payload validated', 'The dummy passed the same payload checks a real backup goes through.'));
+      out.appendChild(item(yn(r.fingerprintValid), 'Fingerprint validated', 'The channel-set fingerprint matched the one recomputed from the dummy channel point.'));
+      out.appendChild(item(r.deletionRequested ? (r.deletionHonored ? 'pass' : 'warn') : 'fail', 'Cleanup (NIP-09 deletion)', !r.deletionRequested ? 'The deletion request could not be sent.' : r.deletionHonored ? 'The relay deleted the event.' : 'The relay ignored the deletion request. The dummy event stays there; it is encrypted dummy data in namespace ' + r.namespace + '.'));
+      (r.errors || []).forEach(function(m){ out.appendChild(item('fail', 'Problem', m)); });
+      note('Public relay test finished.', 'ok');
+    }, function(e){ note('Public relay test failed: ' + e.message, 'err'); }).then(function(){ busy = false; syncTestBtn(); });
+  });
+
+  fetch('/api/config').then(function(r){ return r.json(); }).then(function(c){ token = c.token; }).catch(function(){}).then(function(){ show(location.hash.slice(1)); poll(); });
+})();
+</script>
+</body>
+</html>
