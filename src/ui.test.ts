@@ -444,6 +444,19 @@ test('colour contrast: every text colour used on the console and the landing pag
 
 /* ---------------------------------- landing ---------------------------------- */
 
+test('landing: every command shown in "Run it" can be pasted into a shell as it is (no angle-bracket placeholders), and the first one goes to the project folder', () => {
+  const html = readFileSync(join(ROOT, 'web/index.html'), 'utf8');
+  const cmds = [...html.matchAll(/<code id="(c\d+)">([^<]*)<\/code>/g)].map((m) => ({ id: m[1], text: m[2].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&') }));
+  assert.ok(cmds.length >= 9, 'the commands are found');
+  assert.match(cmds[0].text, /^cd /, 'the first command goes to the project folder');
+  for (const c of cmds) {
+    assert.doesNotMatch(c.text, /[<>]/, `${c.id} must not contain < or >, which a shell reads as a redirect: ${c.text}`);
+    assert.match(c.text, /^(cd |export |npm |LND_CERT=)/, `${c.id} starts with a real command: ${c.text}`);
+  }
+  assert.ok(cmds.some((c) => c.text.includes('$LND_DIR/tls.cert')) && cmds.some((c) => c.text.startsWith('export LND_DIR=')), 'the lnd directory is set once and reused');
+});
+
+
 test('landing: the live drill button runs a drill and the page tracks stages, numbers, checks and measured metrics from its output', { skip, timeout: 90000 }, async () => {
   const fp = 'ab'.repeat(32);
   const lines = [
@@ -478,44 +491,89 @@ test('landing: the live drill button runs a drill and the page tracks stages, nu
   }
 });
 
-test('landing: the hero is drawn on a canvas, uses no third-party media, states the message and passes basic accessibility checks', { skip, timeout: 60000 }, async () => {
+test('landing: the hero draws its own art, a cursor lens follows the pointer, nothing third-party but fonts, and it fits at desktop, phone and small-phone widths', { skip, timeout: 90000 }, async () => {
   const app = await serve({ root: ROOT, host: '127.0.0.1', drill: null, monitor: null, log });
   const b = new Browser();
   try {
     await b.start();
     await b.open(`${app.url}/`);
-    await b.until(`document.fonts.check('500 20px "Plus Jakarta Sans"')`, 15000, 'font loaded');
-    await sleep(3200); // entrance animation
+    await b.until(`document.fonts.check('500 20px Inter') && document.fonts.check('italic 400 20px "Playfair Display"')`, 15000, 'fonts loaded');
+    await sleep(2200); // entrance animation
     const r = await b.ev<Record<string, any>>(`(()=>{
-      const c = document.getElementById('bgCanvas'); const ctx = c.getContext('2d');
-      const d = ctx.getImageData(0, 0, c.width, c.height).data; let lit = 0; for (let i = 3; i < d.length; i += 4 * 97) if (d[i] > 0) lit++;
+      const px = (id) => { const c = document.getElementById(id); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let grey = 0, warm = 0;
+        for (let i = 0; i < d.length; i += 4 * 61) { const R = d[i], G = d[i+1], B = d[i+2]; if (R > 60 && Math.abs(R - G) < 40 && Math.abs(G - B) < 45) grey++; if (R > 120 && R > G * 1.5 && R > B * 1.8) warm++; } return { grey, warm, w: c.width, h: c.height }; };
       const name = (e) => (e.getAttribute('aria-label') || e.textContent || '').trim();
-      return { videos: document.querySelectorAll('video').length, canvasLit: lit, h1: document.querySelectorAll('h1').length, h1Text: document.querySelector('h1').textContent.replace(/\\s+/g,' ').trim(),
-        subText: document.querySelector('.sub').textContent.replace(/\\s+/g,' ').trim(), external: [...document.querySelectorAll('[src],[href]')].map((e) => e.getAttribute('src') || e.getAttribute('href')).filter((u) => /^https?:/.test(u) && !/fonts\\.(googleapis|gstatic)\\.com/.test(u)),
-        unnamed: [...document.querySelectorAll('button, a[href]')].filter((e) => !name(e)).length, bgLabel: document.querySelector('.bg').getAttribute('aria-label'), overflow: document.documentElement.scrollWidth - innerWidth,
-        arch: !!document.querySelector('#architecture .arch[aria-label]'), flow: [...document.querySelectorAll('.flow li')].map((l) => l.textContent).join(' '), htmlClass: document.documentElement.className };
+      const z = (s) => getComputedStyle(document.querySelector(s)).zIndex;
+      return { videos: document.querySelectorAll('video, img').length, base: px('artBase'), lens: px('artLens'), h1: document.querySelectorAll('h1').length, h1Text: document.querySelector('h1').textContent.replace(/\\s+/g,' ').trim(),
+        oneLiner: document.querySelector('.hero-left p').textContent.replace(/\\s+/g,' ').trim(), cta: document.querySelector('.hero-cta').textContent.trim(), ctaBg: getComputedStyle(document.querySelector('.hero-cta')).backgroundColor,
+        h1a: getComputedStyle(document.querySelector('.h1-a')).fontFamily + '|' + getComputedStyle(document.querySelector('.h1-a')).fontStyle, h1b: getComputedStyle(document.querySelector('.h1-b')).fontFamily,
+        external: [...document.querySelectorAll('[src],[href]')].map((e) => e.getAttribute('src') || e.getAttribute('href')).filter((u) => /^https?:/.test(u) && !/fonts\\.(googleapis|gstatic)\\.com/.test(u)),
+        unnamed: [...document.querySelectorAll('button, a[href]')].filter((e) => !name(e)).length, art: document.querySelector('.hero-art').getAttribute('aria-label'), overflow: document.documentElement.scrollWidth - innerWidth,
+        z: [z('.hero-base'), z('.hero-lens'), z('.hero-title'), z('.hero-left'), z('.hero-right')].join(','), lensEvents: getComputedStyle(document.getElementById('heroLens')).pointerEvents,
+        mask: getComputedStyle(document.getElementById('heroLens')).maskImage || getComputedStyle(document.getElementById('heroLens')).webkitMaskImage, mx: document.getElementById('heroLens').style.getPropertyValue('--mx'),
+        pill: getComputedStyle(document.querySelector('.nav-links')).display, burger: getComputedStyle(document.getElementById('burger')).display,
+        arch: !!document.querySelector('#architecture .arch[aria-label]'), flow: [...document.querySelectorAll('.flow li')].map((l) => l.textContent).join(' ') };
     })()`);
-    assert.equal(r.videos, 0, 'no video element');
-    assert.ok(r.canvasLit > 20, 'the canvas is actually drawn');
+    assert.equal(r.videos, 0, 'no video or image element: the art is drawn');
+    assert.ok(r.base.grey > 20 && r.base.warm === 0, `the dim layer is drawn in grey, without the warm colour: ${JSON.stringify(r.base)}`);
+    assert.ok(r.lens.warm > 20, `the lit layer is drawn in warm colours: ${JSON.stringify(r.lens)}`);
     assert.equal(r.h1, 1);
     assert.equal(r.h1Text, 'Back up your node. Verify. Recover.');
-    assert.match(r.subText, /Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file\./);
-    assert.deepEqual(r.external, [], 'nothing is loaded from a third party except the font');
+    assert.match(r.oneLiner, /Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file\./);
+    assert.equal(r.cta, 'Run recovery drill');
+    assert.equal(r.ctaBg, 'rgb(232, 112, 42)');
+    assert.match(r.h1a, /Playfair Display.*\|italic/);
+    assert.match(r.h1b, /Inter/);
+    assert.deepEqual(r.external, [], 'nothing is loaded from a third party except the fonts');
     assert.equal(r.unnamed, 0);
-    assert.ok(r.bgLabel);
+    assert.ok(r.art);
     assert.equal(r.overflow, 0);
+    assert.equal(r.z, '10,30,50,50,50', 'base under the lens under the text');
+    assert.equal(r.lensEvents, 'none');
+    assert.match(r.mask, /radial-gradient/);
+    assert.match(r.mask, /260px/);
+    assert.ok(r.mx === '' || parseFloat(r.mx) <= -900, `before any pointer movement the lens sits off-screen (${r.mx})`);
+    assert.equal(r.pill, 'flex', 'desktop shows the nav pill');
+    assert.equal(r.burger, 'none');
     assert.equal(r.arch, true);
     assert.equal(r.flow, 'BACKUP ENCRYPT PUBLISH WIPE DISCOVER VERIFY RESTORE RECOVERED');
-    // the whole hero (headline, one-liner, both buttons) must sit inside the viewport at desktop, phone and small-phone widths
+
+    // the lens trails the pointer and then settles on it
+    const at = () => b.ev<number[]>(`(()=>{const l=document.getElementById('heroLens');const t=document.getElementById('top').getBoundingClientRect();return [parseFloat(l.style.getPropertyValue('--mx')),parseFloat(l.style.getPropertyValue('--my')),t.left,t.top]})()`);
+    await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 700, y: 450 });
+    await sleep(40);
+    const early = await at();
+    assert.ok(Math.abs(early[0] - 700) > 100, `40 ms after a jump the lens has not arrived (at ${early[0]})`);
+    await sleep(3200);
+    const late = await at();
+    assert.ok(Math.abs(late[0] - (700 - late[2])) < 2 && Math.abs(late[1] - (450 - late[3])) < 2, `the lens settles on the pointer: ${late}`);
+    await b.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 200, y: 300 });
+    await sleep(3200);
+    const moved = await at();
+    assert.ok(Math.abs(moved[0] - 200) < 2 && Math.abs(moved[1] - 300) < 2, `and follows it elsewhere: ${moved}`);
+
+    // the whole hero must sit inside the viewport at desktop, phone and small-phone widths, with the right nav for each
     for (const [w, h] of [[1280, 800], [400, 800], [320, 568]]) {
       await b.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
       await b.open(`${app.url}/`);
-      await b.until(`document.querySelector('.sub').getBoundingClientRect().width > 0`, 8000, 'hero laid out');
-      const box = await b.ev(`(()=>{const out=[];for(const s of ['h1','.sub','.ctas .btn-primary','.ctas .btn-ghost']){const r=document.querySelector(s).getBoundingClientRect();out.push([s,Math.round(r.left),Math.round(r.right)])}return JSON.stringify({vw:innerWidth,out,scrollW:document.documentElement.scrollWidth})})()`);
-      const j = JSON.parse(box);
+      await b.until(`document.querySelector('.hero-cta').getBoundingClientRect().width > 0`, 8000, 'hero laid out');
+      await sleep(1800);
+      const j = JSON.parse(await b.ev(`(()=>{const out=[];for(const s of ['.h1-a','.h1-b','.hero-right p','.hero-cta','.brand']){const e=document.querySelector(s);const r=e.getBoundingClientRect();out.push([s,Math.round(r.left),Math.round(r.right),Math.round(r.bottom)])}
+        const l=document.querySelector('.hero-left');return JSON.stringify({vw:innerWidth,vh:innerHeight,out,scrollW:document.documentElement.scrollWidth,left:getComputedStyle(l).display,pill:getComputedStyle(document.querySelector('.nav-links')).display,burger:getComputedStyle(document.getElementById('burger')).display})})()`));
       for (const [sel, l, rt] of j.out) assert.ok(l >= 0 && rt <= j.vw, `${sel} spans ${l}..${rt} in a ${j.vw}px viewport`);
+      assert.ok(j.out.find((o: any[]) => o[0] === '.hero-cta')![3] <= j.vh, `the button is inside the ${j.vh}px viewport`);
       assert.ok(j.scrollW <= j.vw, `no horizontal scroll at ${w}px`);
+      assert.equal(j.pill, w >= 768 ? 'flex' : 'none', `nav pill at ${w}px`);
+      assert.equal(j.burger, w >= 768 ? 'none' : 'flex', `hamburger at ${w}px`);
+      assert.equal(j.left, w >= 640 ? 'block' : 'none', `left paragraph at ${w}px`);
     }
+
+    // reduced motion: everything is simply there
+    await b.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await b.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    await b.open(`${app.url}/`);
+    await sleep(500);
+    assert.equal(await b.ev(`(()=>{const c=getComputedStyle(document.querySelector('.h1-a'));const z=getComputedStyle(document.querySelector('.hero-base'));return c.opacity+'|'+c.animationName+'|'+z.animationName})()`), '1|none|none');
     assert.deepEqual(clean(b), []);
   } finally {
     b.stop();

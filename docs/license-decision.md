@@ -1,6 +1,6 @@
 # License decision
 
-**Status: undecided. No `LICENSE` file exists and none was added.** `package.json` has `"private": true` and no `license` field. This page is a comparison to help the owner decide; it is not legal advice, and the choice (and any hackathon-rule check) is the owner's.
+**Status: decided 2026-09-20: MIT, see `/LICENSE`.** The comparison below is kept as the record of the options. `package.json` has `"private": true` and no `license` field. This page is a comparison to help the owner decide; it is not legal advice, and the choice (and any hackathon-rule check) is the owner's.
 
 ## What is known about this project
 

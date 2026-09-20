@@ -37,16 +37,18 @@ const send = (method, params = {}) => new Promise((res) => { const i = ++id; pen
 const ev = async (expression) => (await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true, userGesture: true })).result?.result?.value;
 const view = (width, height) => send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
 const shot = async (name) => { writeFileSync(join(OUT, `${name}.png`), Buffer.from((await send('Page.captureScreenshot', { format: 'png' })).result.data, 'base64')); console.log('wrote', `screenshots/${name}.png`); };
+const move = (x, y) => send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+const lens = async () => { await move(420, 520); await move(700, 560); await sleep(2800); }; // the hero's cursor lens, settled
 const go = async (url, wait = 3500) => { await send('Page.navigate', { url }); await sleep(wait); };
 const scrollTo = (sel, pad = 60) => ev(`scrollTo({top:document.querySelector('${sel}').getBoundingClientRect().top+scrollY-${pad},behavior:'instant'})`);
 await send('Page.enable'); await send('Runtime.enable');
 
 if (mode === 'landing') {
   await view(1280, 800);
-  await go(`${BASE}/`, 4800); await shot('01-landing');
+  await go(`${BASE}/`, 4800); await lens(); await shot('01-landing');
 } else if (mode === 'console') {
   await view(1280, 800);
-  await go(`${BASE}/`, 4800); await shot('01-landing');
+  await go(`${BASE}/`, 4800); await lens(); await shot('01-landing');
   await view(1240, 760);
   await go(`file://${join(ROOT, 'docs/diagrams/architecture.svg')}`, 1000); await shot('09-architecture');
   await view(1280, 900);

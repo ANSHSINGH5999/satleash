@@ -4,7 +4,7 @@ All ten were captured on 2026-09-19 from the **real running application** with h
 
 | # | File | What it shows | Source |
 |---|---|---|---|
-| 1 | `screenshots/01-landing.png` | Landing page above the fold | `npm run playground` (or `web`), `/` |
+| 1 | `screenshots/01-landing.png` | Landing page above the fold, with the cursor lens lighting the ridges under the pointer | `npm run playground` (or `web`), `/` |
 | 2 | `screenshots/02-dashboard.png` | Recovery readiness evidence and key numbers | console, Dashboard tab |
 | 3 | `screenshots/03-backup.png` | Backup pipeline state, Nostr key, publish history | console, Backup tab |
 | 4 | `screenshots/04-verify.png` | Verification verdict and what was checked (author and signature, lnd accepted, channel set, relay redundancy) | console, Verify tab |

@@ -46,5 +46,6 @@ export class Logger {
   }
 }
 
-export const createLogger = (env: NodeJS.ProcessEnv = process.env) =>
-  new Logger({ level: (env.LOG_LEVEL as Level | undefined) ?? 'info', json: env.LOG_FORMAT === 'json' });
+/** `stderr: true` sends every level to stderr, for commands whose stdout carries their result (`verify`, `pubkey`). */
+export const createLogger = (env: NodeJS.ProcessEnv = process.env, o: { stderr?: boolean } = {}) =>
+  new Logger({ level: (env.LOG_LEVEL as Level | undefined) ?? 'info', json: env.LOG_FORMAT === 'json', write: o.stderr ? (line) => void process.stderr.write(line + '\n') : undefined });

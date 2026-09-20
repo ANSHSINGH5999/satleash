@@ -26,7 +26,7 @@ Frozen 2026-09-19. Nothing below is to be added or changed before submission exc
 
 ## STABLE
 
-Console (`/console`, 8 tabs) and Security Center; backup state machine and jittered retry; self-healing republish; `/healthz`; SSE broadcaster; explained errors and request ids; redacting logger; the playground (`npm run playground`) as the live-node demo; `npm run demo:check`, `demo:reset` and prerequisite checks (unit-tested; reset verified from several working directories); regtest e2e suite (44 checks).
+Console (`/console`, 8 tabs) and Security Center; backup state machine and jittered retry; self-healing republish; `/healthz`; SSE broadcaster; explained errors and request ids; redacting logger; the playground (`npm run playground`) as the live-node demo; `npm run demo:check`, `demo:reset` and prerequisite checks (unit-tested; reset verified from several working directories); regtest e2e suite (46 checks).
 
 ## OPTIONAL (not in the primary demo)
 

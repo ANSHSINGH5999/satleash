@@ -11,7 +11,7 @@ Lifeboat is local-first and stateless: no database, no server-side accounts. The
 ## Steps
 
 1. `npm ci` (development dependencies are needed at runtime because the scripts use `tsx`).
-2. `LND_MACAROON=<admin> npm run cli -- bake --out monitor.macaroon`; keep only the baked file on the daemon host.
+2. `LND_MACAROON=$LND_DIR/data/chain/bitcoin/<network>/admin.macaroon npm run cli -- bake --out monitor.macaroon` (with `LND_CERT` and `LND_DIR` set as in the README; replace the network folder with yours; do not paste the angle brackets, the shell reads them as a redirect); keep only the baked file on the daemon host.
 3. Set `LND_CERT`, `LND_MACAROON=monitor.macaroon`, `RELAYS` (two or more), then `npm run daemon`.
 4. Check: `npm run cli -- verify` should exit 0, and `/healthz` (if the console runs) reports the security verdict.
 5. Record your seed offline. Restore needs the seed and at least one relay that still holds the backup; no other secret or file.

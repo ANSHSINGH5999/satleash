@@ -133,10 +133,10 @@ async function main() {
   const cli = async (args: string[], env: Record<string, string>) => {
     try {
       const r = await run(tsx, ['src/cli.ts', ...args], { cwd: ROOT, env, encoding: 'utf8' });
-      return { code: 0, out: `${r.stdout}${r.stderr}` };
+      return { code: 0, out: `${r.stdout}${r.stderr}`, stdout: r.stdout };
     } catch (e) {
       const x = e as { code?: number; stdout?: string; stderr?: string };
-      return { code: typeof x.code === 'number' ? x.code : 1, out: `${x.stdout ?? ''}${x.stderr ?? ''}` };
+      return { code: typeof x.code === 'number' ? x.code : 1, out: `${x.stdout ?? ''}${x.stderr ?? ''}`, stdout: x.stdout ?? '' };
     }
   };
   const baked = join(dataDir('alice'), 'cli-baked.macaroon');
@@ -145,6 +145,9 @@ async function main() {
   check((await cli(['bake', '--out', baked], { ...cliEnv, LND_MACAROON: adminMacaroon('alice') })).code !== 0, 'cli bake refuses to overwrite an existing file');
   const vr = await cli(['verify'], { ...cliEnv, LND_MACAROON: baked });
   check(vr.code === 0 && /"verdict": "verified"/.test(vr.out), 'cli verify exits 0 with verdict verified', vr.out.slice(-200));
+  check((() => { try { return JSON.parse(vr.stdout).verdict === 'verified'; } catch { return false; } })(), 'cli verify prints pure JSON on stdout (logs go to stderr), so a script can parse it', vr.stdout.slice(0, 120));
+  const pk = await cli(['pubkey'], { ...cliEnv, LND_MACAROON: baked });
+  check(pk.code === 0 && /^[0-9a-f]{64}\n$/.test(pk.stdout), 'cli pubkey prints exactly the 64-hex Nostr key on stdout', pk.stdout.slice(0, 120));
   check((await cli(['verify'], { ...cliEnv, LND_MACAROON: baked, RELAYS: 'https://nope.example' })).code === 2, 'cli verify rejects a bad RELAYS value up front (exit 2)');
   check((await cli(['verify'], { ...cliEnv, LND_MACAROON: join(dataDir('alice'), 'does-not-exist') })).code === 2, 'cli verify reports a missing macaroon file as a configuration error');
   const rt = await cli(['relay-test', relayA.url], { PATH: cliEnv.PATH, HOME: cliEnv.HOME });

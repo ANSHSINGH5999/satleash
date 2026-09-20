@@ -9,9 +9,9 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Item | Status |
 |---|---|
 | Local commits | `3f4f096` feat: freeze Lifeboat hackathon release candidate; `024e71a` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local, nothing pushed |
-| Clean clone | **PASS** on the final code: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `3f4f096`) had one flaky e2e check, fixed in `024e71a` |
-| Tests | `npm run check`: typecheck clean, **159 / 159** pass (22 files); 2026-09-20 after a fresh `npm ci` |
-| E2E | **44 / 44** real-LND checks (regtest, Docker) |
+| Clean clone | **PASS** at `024e71a`: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `3f4f096`) had one flaky e2e check, fixed in `024e71a` |
+| Tests | `npm run check`: typecheck clean, **161 / 161** pass (22 files); 2026-09-20 after a fresh `npm ci` |
+| E2E | **46 / 46** real-LND checks (regtest, Docker) |
 | Benchmark | Freeze run through the UI: **37.6 s** total, **24.0 s** wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees, relays 2/0 accepted, 1 of 2 reachable at restore, verification verified. Known benchmark 37.9 s / 24.3 s and earlier range 36.9 to 40.9 s: **no material difference** |
 | Browser | **Chrome verified** (headless, fresh profile, 0 console errors). Firefox and Safari **not tested**, no support claimed |
 | Public relay | **Partial**: one-shot dummy-event tests on 4 public relays (2 passed both runs, 1 intermittent, 1 timed out once) plus a read-only adversarial query; retention unmeasured. No further public testing was done in this phase |
@@ -29,8 +29,8 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Check | Result |
 |---|---|
 | `npm install` | completed without errors |
-| `npm run check` (typecheck + tests) | clean; **159 / 159 tests pass** in 22 files |
-| `npm run e2e` (real LND, regtest) | **44 / 44 checks** |
+| `npm run check` (typecheck + tests) | clean; **161 / 161 tests pass** in 22 files |
+| `npm run e2e` (real LND, regtest) | **46 / 46 checks** |
 | `npm audit` | **0 vulnerabilities** |
 | Build / lint | none exist; `npm run typecheck` is the compile check |
 | Clean install (fresh copy, `npm ci`, check, demo, reset) | passed |
@@ -42,8 +42,8 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 
 | | Start of hardening | End of previous pass | Now |
 |---|---|---|---|
-| Unit and browser tests | 67 | 133 | **159** |
-| Real-LND e2e checks | 24 | 41 | **44** |
+| Unit and browser tests | 67 | 133 | **161** |
+| Real-LND e2e checks | 24 | 41 | **46** |
 | Recovery drill | 2 channels, 1 relay | same | 2 channels, **2 relays, one switched off during restore** |
 
 Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 36.9 to 40.9 s across ten runs (section G).
@@ -67,6 +67,8 @@ This pass:
 | Medium | Landing hero one-liner overflowed the viewport on both sides (found in a screenshot; the old test only checked text) | Width and wrapping fixed; hero must fit at 1280, 400 and 320 px | `ui.test.ts` (mutation-checked) |
 | Low | CLI errors were raw (`connect ECONNREFUSED`) | Cause and action shown, exit codes tested | `cli.test.ts` |
 | Low | Drill in a repository Docker cannot bind-mount failed with "timeout waiting for genseed" | Clear message naming the cause | `demo-env.test.ts`, manual |
+| Low | The landing page's "Run it" commands failed when pasted as shown: no `cd` step, and `<lnd dir>` placeholders that a shell reads as a redirect (`zsh: no such file or directory: lnd`) | A `cd lifeboat` step, `export LND_DIR=~/.lnd` and `$LND_DIR` paths; README and docs use the same forms | `ui.test.ts` (no `<` or `>` in any command; mutation-checked) |
+| Low | `verify` and `pubkey` printed a log line on stdout ahead of their result, so a script could not parse them (found by running the landing page's commands literally) | CLI logs go to stderr; stdout carries only the result | `log.test.ts`, e2e (`cli verify` pure JSON, `cli pubkey` 64-hex) |
 | Low | Drill used one relay, so redundancy was not shown | Two relays, one switched off during restore | drill runs |
 | Medium | `Monitor.verifyNow()` could hand a caller the result of a verification that began before the latest publish finished (surfaced as one flaky e2e check, "the next publish heals the relay", in the clean-clone run); it could also trigger a needless republish | A run that predates the latest publish is not shared: the caller waits for it, then gets a fresh run | `monitor.test.ts` |
 
@@ -80,13 +82,13 @@ Listed with tests in `docs/security-architecture.md` and `docs/security.md`; thr
 
 ## F. Tests
 
-159 tests (22 files) and 44 e2e checks; see `docs/test-matrix.md` for the 20 disaster scenarios, each with expected, actual and evidence.
+161 tests (22 files) and 46 e2e checks; see `docs/test-matrix.md` for the 20 disaster scenarios, each with expected, actual and evidence.
 
 ## G. Real-LND results
 
 Recovery drill, final code (`npm run demo`, 2026-09-19): 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**, total **37.9 s**, wipe to funds back 24.3 s. Steps (measured): lnd backup export 13 ms, encryption and signing 5.5 ms, publish 10 ms, verification 41 ms, discovery 24 ms, import into lnd 85 ms, redial 15.0 s (a fixed 5 × 3 s schedule, not measured work), backup 1,811 bytes, relays 2 accepted / 0 failed, 2 healthy before the disaster, 1 reachable at restore. Ten runs ranged 36.9 to 40.9 s. The earlier baseline (1,492,866 / 194 sats / 38 to 48 s) is reproduced; the small time difference is run-to-run variation plus the added verification step (tens of milliseconds).
 
-e2e: 44 / 44, including wipe and restore with only the restricted restore macaroon (1,739,326 of 1,739,590 sats across 3 channels), lnd validating the relay copy through the read-only macaroon, and lnd rejecting a corrupted blob.
+e2e: 46 / 46, including wipe and restore with only the restricted restore macaroon (1,739,326 of 1,739,590 sats across 3 channels), lnd validating the relay copy through the read-only macaroon, and lnd rejecting a corrupted blob.
 
 ## H. Public relay results
 
@@ -102,7 +104,7 @@ Chrome (headless, DevTools protocol): verified, 13 browser tests and the UI-driv
 
 ## K. Performance
 
-Landing DOM ready 21 to 28 ms and 55 KB; API p50 0.6 to 0.8 ms, p95 4.4 to 5.2 ms; canvas hero 61 fps; JS heap 2.1 to 2.4 MB. After 5,000 API calls and 300 opened-and-aborted SSE streams: RSS 64 MB, then 80 MB, then 62 MB after 100 s idle; 0 established connections left; 1 publish in total (no duplicates); no stream churn. Timers, subscriptions and RPC cadence are covered by a test (`monitor.test.ts`).
+Landing (new hero, fresh browser profile): DOM ready 337 ms including the Google Fonts stylesheet, 56 KB HTML; the earlier 21 to 28 ms figures were measured with a warm profile and are not comparable. Hero: 59 fps while the pointer moves and 61 fps idle (device pixel ratio 2), no style writes while idle, JS heap 1.3 MB. API p50 0.6 to 0.8 ms, p95 4.4 to 5.2 ms. After 5,000 API calls and 300 opened-and-aborted SSE streams: RSS 64 MB, then 80 MB, then 62 MB after 100 s idle; 0 established connections left; 1 publish in total (no duplicates); no stream churn. Timers, subscriptions and RPC cadence are covered by a test (`monitor.test.ts`).
 
 ## L. Competitive analysis
 
@@ -126,7 +128,7 @@ Ready locally: README, docs (`docs/`), `submission/` package, Devfolio copy (`su
 
 ## Q. Known limitations
 
-Restore closes channels and needs peers online; about 200 channels per backup; LND only (0.20 used); regtest-verified only; public relay retention unmeasured; Chrome only; relay edits in the console are session-only; both pages load fonts from Google; no license file; the console token is readable by any local process (not a multi-user service).
+The landing hero's orange button (white on `#e8702a`, the supplied design's colours) has 3.1:1 contrast, below WCAG AA (`docs/landing-design.md`); restore closes channels and needs peers online; about 200 channels per backup; LND only (0.20 used); regtest-verified only; public relay retention unmeasured; Chrome only; relay edits in the console are session-only; both pages load fonts from Google; no license file; the console token is readable by any local process (not a multi-user service).
 
 ## R. Exact next actions (need the owner)
 
@@ -142,7 +144,7 @@ Restore closes channels and needs peers online; about 200 channels per backup; L
 
 ```bash
 npm install
-npm run check                       # typecheck + 159 tests
+npm run check                       # typecheck + 161 tests
 npm run web                         # landing + live drill, http://127.0.0.1:8080 (Docker)
 npm run playground                  # regtest + console at /console
 npm run playground:open -- 250000

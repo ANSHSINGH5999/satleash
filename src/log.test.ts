@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Logger, redact } from './log.js';
+import { createLogger, Logger, redact } from './log.js';
 
 test('credentials are redacted by key name, nested and inside arrays', () => {
   const out = redact({ macaroon: 'abcd', nested: { mnemonic: ['a', 'b'], keep: 1 }, list: [{ token: 't', ok: true }], Password: 'x', nsecKey: 'n' }) as any;
@@ -30,4 +30,26 @@ test('level filtering, bounded ring buffer and json output', () => {
   assert.equal(parsed.fields.macaroon, '[redacted]');
   assert.deepEqual(log.recent().map((e) => e.msg), ['m2', 'm3', 'm4']);
   assert.ok(!lines.join('').includes('secret'));
+});
+
+test('createLogger with stderr: true keeps stdout clean: every level goes to stderr', () => {
+  const out: string[] = [];
+  const err: string[] = [];
+  const so = process.stdout.write.bind(process.stdout);
+  const se = process.stderr.write.bind(process.stderr);
+  process.stdout.write = ((c: string | Uint8Array) => (out.push(String(c)), true)) as typeof process.stdout.write;
+  process.stderr.write = ((c: string | Uint8Array) => (err.push(String(c)), true)) as typeof process.stderr.write;
+  try {
+    const log = createLogger({}, { stderr: true });
+    log.info('connected to lnd');
+    log.warn('careful');
+    const plain = createLogger({});
+    plain.info('goes to stdout as before');
+  } finally {
+    process.stdout.write = so;
+    process.stderr.write = se;
+  }
+  assert.equal(err.filter((l) => /connected to lnd|careful/.test(l)).length, 2);
+  assert.deepEqual(out.filter((l) => /connected to lnd|careful/.test(l)), []);
+  assert.equal(out.filter((l) => /goes to stdout as before/.test(l)).length, 1, 'the default logger is unchanged');
 });

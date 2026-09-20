@@ -2,6 +2,7 @@
   "name": "lifeboat",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Seed-only Lightning (LND) channel recovery over Nostr: encrypted channel backups on relays, verification against the live node, and a regtest recovery drill",
   "scripts": {

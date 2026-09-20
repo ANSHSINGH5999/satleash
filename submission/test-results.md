@@ -7,17 +7,17 @@ Recorded 2026-09-19 to 2026-09-20. Environment: macOS 26.6.2, Node v26.7.0, npm 
 ```
 $ npm ci
 $ npm run check
-ℹ tests 159
+ℹ tests 161
 ℹ suites 0
-ℹ pass 159
+ℹ pass 161
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 32099.449583
+ℹ duration_ms 45706.63875
 ```
 
-159 test cases passed, 0 failed, 0 skipped, in 22 test files (tests per file):
+161 test cases passed, 0 failed, 0 skipped, in 22 test files (tests per file):
 
 ```
  17 src/backup.test.ts
@@ -30,7 +30,7 @@ $ npm run check
   7 src/hostile.test.ts
   2 src/keys.test.ts
  14 src/lnd.test.ts
-  3 src/log.test.ts
+  4 src/log.test.ts
  11 src/monitor.test.ts
   7 src/nostr.test.ts
   6 src/payload.test.ts
@@ -39,14 +39,14 @@ $ npm run check
   4 src/relays.test.ts
  10 src/security.test.ts
   5 src/sse.test.ts
- 13 src/ui.test.ts
+ 14 src/ui.test.ts
   7 src/verify.test.ts
  17 src/web.test.ts
 ```
 
 ## npm run e2e, npm audit, npm run typecheck (real LND nodes, regtest)
 
-Three consecutive e2e runs passed 44/44 after the `verifyNow` fix (one earlier run, in a fresh clone, had failed one check); the output below is the third.
+Three consecutive e2e runs passed 44/44 after the `verifyNow` fix (one earlier run, in a fresh clone, had failed one check). The output below is the latest run, 46/46 after two CLI stdout checks were added.
 
 ```
 $ npm run e2e
@@ -96,16 +96,18 @@ PASS  both relays hold the latest again
 PASS  cli bake writes the macaroon and reports lnd's own confirmation that it cannot spend
 PASS  cli bake refuses to overwrite an existing file
 PASS  cli verify exits 0 with verdict verified
+PASS  cli verify prints pure JSON on stdout (logs go to stderr), so a script can parse it
+PASS  cli pubkey prints exactly the 64-hex Nostr key on stdout
 PASS  cli verify rejects a bad RELAYS value up front (exit 2)
 PASS  cli verify reports a missing macaroon file as a configuration error
 PASS  cli relay-test refuses to publish anything without --yes
 PASS  cli relay-test --yes publishes a dummy event, reads it back and deletes it
 
 == lnd outage and recovery
-2026-09-19T19:31:39.280Z ERROR backup verification could not run {"category":"verify","error":"connect ECONNREFUSED 127.0.0.1:8081"}
+2026-09-20T06:34:21.738Z ERROR backup verification could not run {"category":"verify","error":"connect ECONNREFUSED 127.0.0.1:8081"}
 PASS  the dashboard shows lnd as unreachable and the lnd check FAILED
 PASS  overall status is FAILED while lnd is down
-2026-09-19T19:31:40.781Z ERROR backup verification could not run {"category":"verify","error":"GET /v1/channels/backup -> 500: {\"code\":2,\"message\":\"wallet locked, unlock it to enable full RPC access\",\"details\":[]}"}
+2026-09-20T06:34:23.244Z ERROR backup verification could not run {"category":"verify","error":"GET /v1/channels/backup -> 500: {\"code\":2,\"message\":\"wallet locked, unlock it to enable full RPC access\",\"details\":[]}"}
 PASS  after lnd returns the monitor reconnects on its own and verification passes
 PASS  the backup stream resubscribed and the pipeline never left the state machine
 
@@ -174,6 +176,23 @@ web, daemon down: GET /api/status -> {"busy":false,"dockerOk":false,"drill":true
 First clone, of `3f4f096`: tree identical, `npm ci`, 158 / 158 tests, audit 0, README demo commands worked, e2e **43 / 44**: "the next publish heals the relay" failed. Root cause: `Monitor.verifyNow()` could join a verification that began before the latest publish finished and return its stale answer. Fixed in `024e71a` with a regression test.
 
 Second clone, of `024e71a`: tree identical, `npm ci`, 159 / 159 tests, `npm audit` 0 vulnerabilities, e2e 44 / 44, `npm run demo` recovered 1,492,866 of 1,493,060 sats with 194 sats fees in 36.9 s, `npm run playground` reached READY and `npm run demo:check` printed READY. Clone folders and Docker containers were removed afterwards.
+
+## The landing page's "Run it" commands, run literally (2026-09-20, real regtest LND)
+
+```
+npm install && npm run web             -> install ok; server up (HTTP 200)
+npm run playground                     -> READY
+npm run demo                           -> earlier drills (10 runs), all recovered 1,492,866 of 1,493,060 sats
+cli bake --out monitor.macaroon        -> wrote (mode 0600); "lnd confirms: this macaroon cannot spend on-chain funds"; a second run refuses to overwrite (exit 1)
+cli bake --restore --out restore.mac.. -> permissions incl. offchain:write peers:write; lnd confirms it cannot spend
+npm run daemon                         -> connected to lnd, backup service started, backup published (2 channels, 2 relays ok); stopped cleanly on Ctrl-C
+cli verify                             -> exit 0: verdict verified, lndValidated true, 2 channels in backup, both relays healthy
+cli verify (relays down)               -> exit 1: verdict failed, "no relay is reachable"
+cli pubkey                             -> the 64-hex key, equal to the daemon's nostrPubkey
+cli restore (wiped node, same seed)    -> "2 channel(s) now wait for their peers to force-close"; then 1,492,866 of 1,493,060 sats recovered (194 sats fees), same node identity
+```
+
+Found by this run and fixed: `verify` and `pubkey` printed a log line on stdout before their result; logs now go to stderr.
 
 ## Not run
 

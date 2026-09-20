@@ -14,6 +14,7 @@ Status legend: **verified** = exercised here by an automated test or a run this 
 | Self-healing republish when relays are behind the node | verified | `monitor.test.ts` |
 | Least-privilege macaroons (`bake`), confirmed by LND | verified | e2e |
 | Mainnet refused unless `LIFEBOAT_ALLOW_MAINNET=1` | verified | `config.test.ts` |
+| Landing hero: cursor lens over self-drawn layers, Lithos-style layout and motion | verified in headless Chrome | `ui.test.ts`, `landing-design.md` |
 | Console: 8 tabs, live data, relay management | verified in headless Chrome | `ui.test.ts`, screenshots |
 | Loopback-only server, token, Host/Origin, nonce CSP | verified | `web.test.ts` |
 | Public relay test (throwaway key, dummy payload shaped like a backup, NIP-09 cleanup) | verified one-shot on 4 public relays; 2 passed both runs, 1 intermittent, 1 timed out once | `public-relay-testing.md` |

@@ -78,7 +78,7 @@ Without Docker, `npm run demo` and `npm run playground` stop within 15 s with on
 ```bash
 git clone [GitHub URL — TO BE ADDED] lifeboat && cd lifeboat
 npm install
-npm run check          # typecheck + 159 unit and browser tests
+npm run check          # typecheck + 161 unit and browser tests
 ```
 
 `npm run check` needs no Docker. Chrome is found automatically on macOS and Linux; set `CHROME_PATH` otherwise (browser tests are skipped if none is found).
@@ -92,7 +92,7 @@ scripts/        screenshot capture tool
 docs/           architecture, protocol, security, threat model, testing, positioning, checklists
 submission/     Devfolio copy and links to the maintained documents
 screenshots/    real screenshots of the running application
-.github/        CI workflow (not run on GitHub yet)
+.github/        CI workflow
 ```
 
 ## Development
@@ -110,18 +110,19 @@ npm run typecheck
 Against your own node (regtest first):
 
 ```bash
-LND_CERT=... LND_MACAROON=<admin> npm run cli -- bake --out monitor.macaroon
-LND_CERT=... LND_MACAROON=monitor.macaroon RELAYS=wss://a,wss://b npm run daemon
-LND_CERT=... LND_MACAROON=monitor.macaroon RELAYS=wss://a,wss://b npm run cli -- verify
+export LND_DIR=~/.lnd          # your lnd data directory; the paths below use the regtest folder
+LND_CERT=$LND_DIR/tls.cert LND_MACAROON=$LND_DIR/data/chain/bitcoin/regtest/admin.macaroon npm run cli -- bake --out monitor.macaroon
+LND_CERT=$LND_DIR/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example npm run daemon
+LND_CERT=$LND_DIR/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example npm run cli -- verify
 ```
 
-Variables are listed in [.env.example](.env.example). There is no build step and no lint script; `npm run typecheck` is the compile check.
+The CLI prints a command's result on stdout (`verify` prints pure JSON, `pubkey` the 64-hex key) and its log lines on stderr, so `npm run -s cli -- verify > result.json` and `KEY=$(npm run -s cli -- pubkey)` work (`-s` hides npm's own `> lifeboat@0.1.0 cli` banner, which npm prints on stdout otherwise). Variables are listed in [.env.example](.env.example). There is no build step and no lint script; `npm run typecheck` is the compile check.
 
 ## Testing
 
 ```bash
-npm run check    # typecheck + 159 tests (no Docker)
-npm run e2e      # 44 checks against real LND nodes on regtest (Docker, a few minutes)
+npm run check    # typecheck + 161 tests (no Docker)
+npm run e2e      # 46 checks against real LND nodes on regtest (Docker, a few minutes)
 npm audit        # 0 vulnerabilities on 2026-09-19
 ```
 
@@ -152,7 +153,8 @@ CI is written (`.github/workflows/ci.yml`) but **has not been run on GitHub**: o
 - **Regtest-verified only.** Testnet and mainnet were not run.
 - **LND only**, and only LND 0.20 was used.
 - **Verified in Chrome only**; Firefox and Safari were not tested.
-- **No license file yet** (owner's decision: [docs/license-decision.md](docs/license-decision.md)).
+- The landing hero's orange button has 3.1:1 contrast (design-specified colours), below WCAG AA: [docs/landing-design.md](docs/landing-design.md).
+- **License:** MIT, see [LICENSE](LICENSE).
 
 ## BOSS Battle track
 

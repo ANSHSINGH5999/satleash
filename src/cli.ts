@@ -25,7 +25,7 @@ const USAGE = `usage: cli.ts <command>
 env: LND_CERT, LND_MACAROON, RELAYS (backup|verify|restore), optional LND_HOST, LND_PORT (default 8080), LOG_LEVEL,
      LOG_FORMAT=json, LIFEBOAT_ALLOW_MAINNET=1 (mainnet is refused otherwise)`;
 
-const log = createLogger();
+const log = createLogger(process.env, { stderr: true }); // stdout is reserved for what a command prints as its result
 
 async function main(argv: string[], env: NodeJS.ProcessEnv): Promise<number> {
   const cmd = argv[0];

@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23a78bfa' stroke-width='5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;800&amp;display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@1,400;1,500;1,600&amp;display=swap">
 <style>
 :root{
   --u: min(calc(100vw / 1280), calc(100dvh / 760));
@@ -27,9 +27,6 @@
   --glass-line: rgba(255,255,255,.09);
   --surface:    rgba(255,255,255,.035);
 
-  --dx: 8.5;
-  --dy: 13.1;
-
   --e-reveal: cubic-bezier(.16, 1, .3, 1);
   --e-soft:   cubic-bezier(.25, .8, .3, 1);
 }
@@ -42,7 +39,7 @@ html{background:#000;scroll-behavior:smooth}
 html,body{margin:0;padding:0}
 body{
   background:#000;overflow-x:hidden;
-  font-family:'PJS','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   text-rendering:geometricPrecision;
@@ -50,104 +47,12 @@ body{
 }
 a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:99px}
 
-/* ---------- hero + video stage ---------- */
-.hero{position:relative;width:100%;height:100dvh;overflow:hidden;background:#000}
-@supports not (height: 100dvh){ .hero{height:100vh} }
-
-.bg{
-  position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%);
-  width:max(100vw, calc(100dvh * 1.6));
-  height:max(62.5vw, 100dvh);
-  background-color:#000;
-}
-@supports not (height: 100dvh){
-  .bg{width:max(100vw, calc(100vh * 1.6));height:max(62.5vw, 100vh)}
-}
-#bgCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-
-/* ---------- nav (fixed; gains a blur once the page scrolls) ---------- */
-.nav{
-  position:fixed;top:0;left:0;right:0;height:calc(67 * var(--u));
-  display:flex;align-items:center;
-  padding-left:calc(24.5 * var(--u));padding-right:calc(50.7 * var(--u));
-  z-index:30;
-  border-bottom:1px solid transparent;
-  transition:background .25s ease,border-color .25s ease,-webkit-backdrop-filter .25s ease,backdrop-filter .25s ease;
-}
-.nav.scrolled{
-  background:rgba(0,0,0,.58);border-bottom-color:rgba(255,255,255,.06);
-  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
-}
-.logo{
-  font-weight:800;font-size:calc(26 * var(--u));letter-spacing:calc(0.45 * var(--u));
-  transform:translateY(calc(-2.4 * var(--u)));line-height:1;color:var(--ink);
-  text-decoration:none;white-space:nowrap;
-}
-.nav-links{
-  position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%) translateX(calc(-23 * var(--u)));
-  display:flex;align-items:center;gap:calc(24.3 * var(--u));white-space:nowrap;
-}
-.nav-links a{
-  color:var(--ink-muted);text-decoration:none;font-size:calc(11.5 * var(--u));
-  font-weight:500;letter-spacing:calc(-0.15 * var(--u));line-height:1;
-  transition:color .18s ease;
-}
-.nav-links a:hover{color:#fff}
-.nav-links a[hidden],.menu a[hidden]{display:none}
-.nav-actions{margin-left:auto;display:flex;align-items:center;gap:calc(6.8 * var(--u))}
-
 .btn{
   display:inline-flex;align-items:center;justify-content:center;
   font-family:inherit;text-decoration:none;white-space:nowrap;border:0;cursor:pointer;
 }
 .arw{flex:0 0 auto;display:block}
 
-.btn-nav-start{
-  height:calc(28 * var(--u));padding-left:calc(13.5 * var(--u));
-  padding-right:calc(14.5 * var(--u));border-radius:calc(14 * var(--u));
-  background:var(--white-btn);color:var(--btn-ink);font-size:calc(11.1 * var(--u));
-  font-weight:500;letter-spacing:0;gap:calc(7 * var(--u));
-  transition:background .18s ease;
-}
-.btn-nav-start:hover{background:#fff}
-.btn-nav-start .arw{width:calc(11.5 * var(--u));height:calc(9.6 * var(--u))}
-
-.burger{
-  display:none;margin-left:auto;width:calc(40 * var(--u));height:calc(28 * var(--u));
-  align-items:center;justify-content:center;
-  background:var(--panel);border-radius:calc(14 * var(--u));border:0;cursor:pointer;padding:0;
-}
-.burger span{display:block;width:16px;height:1.5px;background:#ededed;border-radius:2px;position:relative}
-.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:16px;height:1.5px;background:#ededed;border-radius:2px}
-.burger span::before{top:-5px}
-.burger span::after{top:5px}
-
-.menu{display:none}
-@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
-
-/* ---------- hero content ---------- */
-.hero-inner{
-  position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%) translate(calc(var(--dx) * var(--u)), calc(var(--dy) * var(--u)));
-  width:max-content;text-align:center;z-index:2;
-}
-.ln{display:block}
-.ln-i{display:block;white-space:nowrap}
-h1{
-  margin:0;font-weight:500;font-size:calc(76 * var(--u));
-  line-height:calc(80 * var(--u));letter-spacing:calc(-1 * var(--u));color:var(--ink);
-}
-.sub{
-  margin:calc(16.1 * var(--u)) auto 0;font-weight:300;font-size:calc(17.4 * var(--u));
-  line-height:calc(27 * var(--u));letter-spacing:calc(-0.30 * var(--u));color:#f6f6f6;
-  max-width:calc(660 * var(--u));text-wrap:balance;
-}
-.ctas{
-  margin-top:calc(21.8 * var(--u));display:flex;align-items:center;justify-content:center;
-  transform:translateX(calc(-0.75 * var(--u)));gap:calc(7 * var(--u));
-}
 .btn-lg{
   height:calc(39 * var(--u));border-radius:calc(19.5 * var(--u));
   font-size:calc(13.3 * var(--u));font-weight:500;letter-spacing:calc(-0.3 * var(--u));gap:calc(9 * var(--u));
@@ -165,6 +70,120 @@ h1{
 }
 .btn-ghost:hover{background:rgba(0,0,0,.66);border-color:rgba(255,255,255,.16)}
 .btn-lg .arw{width:calc(13 * var(--u));height:calc(10.8 * var(--u))}
+
+
+/* ---------- nav + hero: full-screen, cursor lens (layout, type and motion follow the Lithos hero design) ---------- */
+.font-playfair{font-family:'Playfair Display',serif}
+
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;padding:1rem;
+  border-bottom:1px solid transparent;
+  transition:background .25s ease,border-color .25s ease,-webkit-backdrop-filter .25s ease,backdrop-filter .25s ease;
+}
+.nav.scrolled{
+  background:rgba(0,0,0,.58);border-bottom-color:rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+}
+.brand{display:flex;align-items:center;gap:.5rem;color:#fff;text-decoration:none}
+.brand svg{display:block}
+.brand span{font-size:1.5rem;line-height:2rem;font-style:italic;color:#fff}
+.nav-links{display:none}
+.nav-links a{
+  color:rgba(255,255,255,.8);text-decoration:none;padding:.375rem 1rem;border-radius:9999px;
+  font-size:.875rem;line-height:1.25rem;font-weight:500;white-space:nowrap;
+  transition:background-color .15s cubic-bezier(.4,0,.2,1),color .15s cubic-bezier(.4,0,.2,1);
+}
+.nav-links a:hover{background:rgba(255,255,255,.2);color:#fff}
+.nav-links a.is-active{color:#fff}
+.nav-links a[hidden],.menu a[hidden]{display:none}
+.nav-cta{
+  display:none;background:#fff;color:#111827;text-decoration:none;white-space:nowrap;
+  font-size:.875rem;line-height:1.25rem;font-weight:600;padding:.625rem 1.5rem;border-radius:9999px;
+  transition:background-color .15s cubic-bezier(.4,0,.2,1);
+}
+.nav-cta:hover{background:#f3f4f6}
+.burger{
+  display:flex;align-items:center;justify-content:center;color:#fff;background:none;border:0;
+  padding:.5rem;margin-right:-.5rem;cursor:pointer;
+}
+.menu{display:none}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
+.menu{
+  position:fixed;top:3.75rem;left:1rem;right:1rem;z-index:110;flex-direction:column;padding:.5rem;
+  background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.2);border-radius:1rem;transform-origin:top right;
+}
+.menu.open{display:flex;animation:menuIn .18s ease both}
+.menu a{
+  color:rgba(255,255,255,.8);text-decoration:none;font-size:.875rem;line-height:1.25rem;font-weight:500;
+  padding:.625rem 1rem;border-radius:.75rem;transition:background-color .15s,color .15s;
+}
+.menu a:hover{background:rgba(255,255,255,.2);color:#fff}
+.menu .m-start{margin-top:.25rem;background:#fff;color:#111827;text-align:center;border-radius:9999px;font-weight:600;padding:.625rem 1.5rem}
+.menu .m-start:hover{background:#f3f4f6;color:#111827}
+@media (min-width:640px){.nav{padding:1.25rem}.menu{top:4.25rem;left:1.25rem;right:1.25rem}}
+@media (min-width:768px){
+  .nav-links{
+    display:flex;position:absolute;left:50%;transform:translateX(-50%);align-items:center;gap:.25rem;
+    padding:.5rem;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.3);border-radius:9999px;
+  }
+  .nav-cta{display:block}
+  .burger,.menu,.menu.open{display:none}
+}
+
+.hero{position:relative;width:100%;height:100vh;height:100dvh;overflow:hidden;background:#000;letter-spacing:-.02em}
+.hero-base{position:absolute;inset:0;z-index:10;background:#000}
+.hero-lens{
+  position:absolute;inset:0;z-index:30;pointer-events:none;background:#000;
+  -webkit-mask-image:radial-gradient(circle 260px at var(--mx,-999px) var(--my,-999px),rgba(255,255,255,1) 0,rgba(255,255,255,1) 40%,rgba(255,255,255,.75) 60%,rgba(255,255,255,.4) 75%,rgba(255,255,255,.12) 88%,rgba(255,255,255,0) 100%);
+  mask-image:radial-gradient(circle 260px at var(--mx,-999px) var(--my,-999px),rgba(255,255,255,1) 0,rgba(255,255,255,1) 40%,rgba(255,255,255,.75) 60%,rgba(255,255,255,.4) 75%,rgba(255,255,255,.12) 88%,rgba(255,255,255,0) 100%);
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+.hero-base canvas,.hero-lens canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+.hero-title{
+  position:absolute;top:14%;left:0;right:0;z-index:50;display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:0 1.25rem;pointer-events:none;
+}
+.hero-title h1{margin:0;color:#fff;font-weight:400;line-height:.95;font-size:inherit}
+.h1-a,.h1-b{display:block;font-size:min(3rem,10.6vw);line-height:1;font-weight:400}
+.h1-a{font-style:italic;letter-spacing:-.05em}
+.h1-b{letter-spacing:-.08em;margin-top:-.25rem}
+@media (min-width:640px){.h1-a,.h1-b{font-size:4.5rem}}
+@media (min-width:768px){.h1-a,.h1-b{font-size:6rem}}
+
+.hero-left{position:absolute;z-index:50;display:none;bottom:3.5rem;left:2.5rem;max-width:260px}
+@media (min-width:640px){.hero-left{display:block}}
+@media (min-width:768px){.hero-left{left:3.5rem}}
+.hero-left p,.hero-right p{margin:0;color:rgba(255,255,255,.8);line-height:1.625}
+.hero-left p{font-size:.875rem}
+.hero-right{
+  position:absolute;z-index:50;bottom:2.5rem;left:1.25rem;right:1.25rem;max-width:100%;
+  display:flex;flex-direction:column;align-items:flex-start;gap:1rem;
+}
+.hero-right p{font-size:.75rem;line-height:1.625}
+@media (min-width:640px){
+  .hero-right{bottom:6rem;left:auto;right:2.5rem;max-width:260px;gap:1.25rem}
+  .hero-right p{font-size:.875rem}
+}
+@media (min-width:768px){.hero-right{right:3.5rem}}
+.hero-cta{
+  display:inline-block;background:#e8702a;color:#fff;text-decoration:none;font-size:.875rem;line-height:1.25rem;font-weight:500;
+  padding:.75rem 1.75rem;border-radius:9999px;transition:all .15s cubic-bezier(.4,0,.2,1);
+}
+.hero-cta:hover{background:#d2611f;transform:scale(1.03);box-shadow:0 10px 15px -3px rgba(232,112,42,.3),0 4px 6px -4px rgba(232,112,42,.3)}
+.hero-cta:active{transform:scale(.95)}
+
+@keyframes heroRise{0%{opacity:0;transform:translateY(28px);filter:blur(12px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
+@keyframes heroFadeUp{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes heroZoom{0%{transform:scale(1.12)}100%{transform:scale(1)}}
+.hero-anim{opacity:0;animation-fill-mode:forwards;animation-timing-function:cubic-bezier(.16,1,.3,1)}
+.hero-rise{animation-name:heroRise;animation-duration:1.1s}
+.hero-fade{animation-name:heroFadeUp;animation-duration:1s}
+.hero-zoom{animation:heroZoom 1.8s cubic-bezier(.16,1,.3,1) forwards}
+@media (prefers-reduced-motion:reduce){.hero-anim,.hero-zoom{animation:none;opacity:1}}
 
 /* ---------- content sections (same palette, type and hairlines as the hero) ---------- */
 .sec{position:relative;background:#000;padding:clamp(80px,10vw,150px) 24px;border-top:1px solid rgba(255,255,255,.06)}
@@ -278,15 +297,6 @@ h1{
         calc(100vh / 620)
       ); }
   }
-  .nav{height:max(58px, calc(67 * var(--u)));
-       padding-left:max(24px, calc(28 * var(--u)));
-       padding-right:max(24px, calc(28 * var(--u)))}
-  .nav-links,.nav-actions{display:none}
-  .burger{display:flex;width:max(46px, calc(48 * var(--u)));
-          height:max(38px, calc(34 * var(--u)));border-radius:999px}
-  .hero-inner{max-width:calc(100vw - 48px)}
-  .sub{font-size:max(16px, calc(17.4 * var(--u)));line-height:max(25px, calc(27 * var(--u)))}
-  .ctas{margin-top:max(26px, calc(21.8 * var(--u)));gap:max(10px, calc(7 * var(--u)))}
   .btn-lg{height:max(44px, calc(39 * var(--u)));border-radius:max(22px, calc(19.5 * var(--u)));
           font-size:max(15px, calc(13.3 * var(--u)));gap:max(10px, calc(9 * var(--u)))}
   .btn-primary{padding-left:max(21px, calc(18.2 * var(--u)));
@@ -294,23 +304,6 @@ h1{
   .btn-ghost{padding-left:max(20px, calc(17.4 * var(--u)));
              padding-right:max(21px, calc(18.4 * var(--u)))}
   .btn-lg .arw{width:max(14px, calc(13 * var(--u)));height:max(11.6px, calc(10.8 * var(--u)))}
-  .menu{position:fixed;top:calc(max(58px, calc(67 * var(--u))) - 6px);
-        right:max(24px, calc(28 * var(--u)));width:min(320px, calc(100vw - 48px));
-        background:rgba(10,10,12,.86);-webkit-backdrop-filter:blur(22px);
-        backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.09);
-        border-radius:20px;padding:10px 8px 12px;flex-direction:column;
-        box-shadow:0 24px 60px rgba(0,0,0,.55);transform-origin:top right;z-index:40}
-  .menu.open{display:flex;animation:menuIn .18s ease both}
-  .menu a{color:var(--ink-muted);text-decoration:none;font-size:15px;font-weight:500;
-          letter-spacing:calc(-0.15 * var(--u));padding:12px 14px;border-radius:12px;
-          transition:background .18s ease,color .18s ease}
-  .menu a:hover{background:rgba(255,255,255,.06);color:#fff}
-  .menu .divider{height:1px;background:rgba(255,255,255,.08);margin:8px 14px}
-  .menu .m-start{display:flex;align-items:center;justify-content:center;gap:9px;
-    background:var(--white-btn);color:var(--btn-ink);margin:6px 8px 0;padding:13px 16px;
-    border-radius:14px;font-weight:600}
-  .menu .m-start:hover{background:#fff;color:var(--btn-ink)}
-  .menu .m-start .arw{width:13px;height:11px}
 
   .steps{grid-template-columns:1fr}
   .steps li{border-left:0;border-top:1px solid var(--glass-line)}
@@ -325,23 +318,10 @@ h1{
 /* ---------- mobile ---------- */
 @media (max-width:552px){
   :root{--u:1px}
-  .nav{height:56px;padding:0 20px}
-  .logo{font-size:22px;letter-spacing:-.4px}
-  .burger{width:42px;height:36px}
-  .hero-inner{position:absolute;left:0;right:0;top:50%;width:auto;max-width:none;
-              padding:0 20px;transform:translateY(-47%)}
-  h1{font-size:min(64px, calc((100vw - 44px) / 9));line-height:1.04;letter-spacing:-.02em}
-  .sub{margin-top:16px;font-size:clamp(15.5px, 4vw, 16.5px);line-height:1.6;
-       letter-spacing:0;max-width:42ch;margin-left:auto;margin-right:auto}
-  .sub br{display:none}
-  .ctas{margin-top:24px;gap:10px;transform:none;flex-wrap:wrap}
   .btn-lg{height:46px;border-radius:23px;font-size:15px;gap:9px}
   .btn-primary{padding-left:20px;padding-right:21px}
   .btn-ghost{padding-left:19px;padding-right:20px}
   .btn-lg .arw{width:13px;height:11px}
-  .menu{top:50px;left:16px;right:16px;width:auto}
-  .menu a{font-size:15.5px;padding:13px 14px}
-  .menu .m-start{padding:14px 16px}
 
   .sec{padding-left:20px;padding-right:20px}
   .foot{padding-left:20px;padding-right:20px}
@@ -354,60 +334,7 @@ h1{
 }
 
 @media (max-width:353px){
-  .ctas{flex-direction:column;align-items:center}
-  .btn-lg{width:min(100%,272px)}
   .stats{grid-template-columns:1fr}
-}
-
-@media (max-width:552px) and (max-height:460px){
-  h1{font-size:min(40px, calc((100vw - 44px) / 9))}
-  .sub{margin-top:12px;font-size:15px;line-height:1.5}
-  .ctas{margin-top:18px}
-  .hero-inner{transform:translateY(-44%)}
-}
-
-/* ---------- entrance: resting state while fonts resolve ---------- */
-html.anim .ln{overflow:hidden;padding-top:.26em;margin-top:-.26em}
-html.anim .ln-i{transform:translateY(100%)}
-html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
-html.anim .burger, html.anim .sub, html.anim .ctas .btn{opacity:0}
-html.anim .ln-i, html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
-html.anim .sub, html.anim .ctas .btn{will-change:transform,opacity}
-
-@keyframes lineRise{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes subIn{from{opacity:0;transform:translateY(calc(14 * var(--u)));filter:blur(4px)}
-                 to{opacity:1;transform:none;filter:blur(0)}}
-@keyframes subInFlat{from{opacity:0;transform:translateY(calc(12 * var(--u)))}
-                     to{opacity:1;transform:none}}
-@keyframes pillIn{from{opacity:0;transform:translateY(calc(8 * var(--u))) scale(.972)}
-                  to{opacity:1;transform:none}}
-@keyframes liftIn{from{opacity:0;transform:translateY(calc(9 * var(--u)))}
-                  to{opacity:1;transform:none}}
-@keyframes logoIn{
-  from{opacity:0;transform:translateY(calc(-2.4 * var(--u))) translateY(calc(9 * var(--u)))}
-  to  {opacity:1;transform:translateY(calc(-2.4 * var(--u)))}}
-
-html.anim.go .ln-i{animation:lineRise 1.05s var(--e-reveal) both}
-html.anim.go .ln:nth-child(1) .ln-i{animation-delay:.12s}
-html.anim.go .ln:nth-child(2) .ln-i{animation-delay:.22s}
-html.anim.go .logo{animation:logoIn .62s var(--e-soft) .46s both}
-html.anim.go .nav-links a{animation:liftIn .55s var(--e-soft) both}
-html.anim.go .nav-links a:nth-child(1){animation-delay:.540s}
-html.anim.go .nav-links a:nth-child(2){animation-delay:.585s}
-html.anim.go .nav-links a:nth-child(3){animation-delay:.630s}
-html.anim.go .nav-links a:nth-child(4){animation-delay:.675s}
-html.anim.go .nav-links a:nth-child(5){animation-delay:.720s}
-html.anim.go .sub{animation:subIn .85s var(--e-reveal) .58s both}
-html.anim.go .burger{animation:pillIn .55s var(--e-soft) .68s both}
-html.anim.go .btn-nav-start{animation:pillIn .55s var(--e-soft) .73s both}
-html.anim.go .ctas .btn-primary{animation:pillIn .70s var(--e-reveal) .90s both}
-html.anim.go .ctas .btn-ghost{animation:pillIn .70s var(--e-reveal) .97s both}
-
-@media (max-width:552px){
-  html.anim.go .sub{animation-name:subInFlat}
-  html.anim.go .ln-i{animation-duration:.92s}
-  html.anim.go .ctas .btn-primary{animation-delay:.84s}
-  html.anim.go .ctas .btn-ghost{animation-delay:.90s}
 }
 
 /* ---------- scroll reveal for the sections (armed by script, off under reduced motion) ---------- */
@@ -416,103 +343,63 @@ html.rv-on .rv.in{opacity:1;transform:none}
 html.rv-on .term .tl{opacity:0;transition:opacity .35s ease calc(var(--i) * 70ms)}
 html.rv-on .console.in .term .tl{opacity:1}
 
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  html.anim .ln{overflow:visible;padding-top:0;margin-top:0}
-  html.anim .ln-i{transform:none}
-  html.anim .logo, html.anim .nav-links a, html.anim .nav-actions .btn,
-  html.anim .burger, html.anim .sub, html.anim .ctas .btn{opacity:1}
-}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-<script>
-/* A) ENTRANCE — arms synchronously so there is no flash of unanimated content */
-(function(){
-  var d = document, root = d.documentElement;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  root.classList.add('anim');
-
-  var started = false, cleaned = false, bootT, safeT;
-
-  function clean(){
-    if (cleaned) return;
-    cleaned = true;
-    clearTimeout(safeT);
-    root.removeEventListener('animationend', onEnd, true);
-    root.classList.remove('anim', 'go');
-  }
-  function onEnd(e){
-    if (e.animationName === 'pillIn' && e.target.classList.contains('btn-ghost')) clean();
-  }
-  function start(){
-    if (started) return;
-    started = true;
-    clearTimeout(bootT);
-    root.addEventListener('animationend', onEnd, true);
-    safeT = setTimeout(clean, 2600);
-    root.classList.add('go');
-  }
-  function boot(){
-    bootT = setTimeout(start, 900);
-    if (d.fonts && d.fonts.ready) d.fonts.ready.then(start, start);
-    else start();
-  }
-  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', boot);
-  else boot();
-})();
-</script>
 </head>
 <body>
 
 <header class="nav" id="nav">
-  <a class="logo" href="#">Lifeboat</a>
+  <a class="brand" href="#" aria-label="Lifeboat, back to the top">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="10.5" stroke="#ffffff" stroke-width="5" stroke-dasharray="14.4 8.25" transform="rotate(-12 16 16)"/></svg>
+    <span class="font-playfair">Lifeboat</span>
+  </a>
   <nav class="nav-links" aria-label="Primary">
-    <a href="#how">How it works</a>
+    <a class="is-active" href="#how">How it works</a>
+    <a href="#architecture">Architecture</a>
     <a href="#proof">Recovery drill</a>
+    <a href="#security">Security</a>
     <a href="#limits">Limits</a>
-    <a href="#run">Run it</a>
     <a href="/console" data-needs-server hidden>Console</a>
   </nav>
-  <div class="nav-actions">
-    <a class="btn btn-nav-start" href="#proof">Run recovery drill
-      <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </a>
-  </div>
-  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><span></span></button>
+  <a class="nav-cta" href="#run">Run it</a>
+  <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
 </header>
 
 <nav class="menu" id="menu" aria-label="Mobile">
   <a href="#how">How it works</a>
+  <a href="#architecture">Architecture</a>
   <a href="#proof">Recovery drill</a>
-  <a href="#limits">Limits</a>
   <a href="#security">Security model</a>
+  <a href="#limits">Limits</a>
   <a href="#run">Run it</a>
   <a href="/console" data-needs-server hidden>Console</a>
-  <div class="divider"></div>
-  <a class="m-start" href="#proof">Run recovery drill
-    <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </a>
+  <a class="m-start" href="#proof">Run recovery drill</a>
 </nav>
 
 <main>
-  <section class="hero">
-    <div class="bg" role="img" aria-label="Animated dot-matrix globe with four relay nodes exchanging encrypted packets along arcs">
-      <canvas id="bgCanvas"></canvas>
+  <section class="hero" id="top">
+    <div class="hero-art" role="img" aria-label="Abstract layered ridges, dim and unreadable like ciphertext, that a spotlight following the cursor lights up to show channel, relay and fingerprint markers">
+      <div class="hero-base hero-zoom"><canvas id="artBase"></canvas></div>
+      <div class="hero-lens" id="heroLens"><canvas id="artLens"></canvas></div>
     </div>
 
-    <div class="hero-inner">
-      <h1><span class="ln"><span class="ln-i">Back up your node.</span></span>
-          <span class="ln"><span class="ln-i">Verify. Recover.</span></span></h1>
-      <p class="sub">Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file.<br>
-        Demonstrated on regtest with real LND nodes.</p>
-      <div class="ctas">
-        <a class="btn btn-lg btn-primary" href="#proof">Run recovery drill
-          <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="btn btn-lg btn-ghost" href="#architecture">View architecture
-          <svg class="arw" viewBox="0 0 12 10" fill="none" aria-hidden="true"><path d="M0.8 5h10M7.1 1.4 10.9 5l-3.8 3.6" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
+    <div class="hero-title">
+      <h1>
+        <span class="h1-a font-playfair hero-anim hero-rise" style="animation-delay:.25s">Back up your node.</span>
+        <span class="h1-b hero-anim hero-rise" style="animation-delay:.42s">Verify. Recover.</span>
+      </h1>
+    </div>
+
+    <div class="hero-left hero-anim hero-fade" style="animation-delay:.7s">
+      <p>Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file.</p>
+    </div>
+
+    <div class="hero-right hero-anim hero-fade" style="animation-delay:.85s">
+      <p>Demonstrated on regtest with real LND nodes: the recovery drill wipes a node and restores it while you watch.</p>
+      <a class="hero-cta" href="#proof">Run recovery drill</a>
     </div>
   </section>
 
@@ -681,8 +568,12 @@ html.rv-on .console.in .term .tl{opacity:1}
     <div class="wrap">
       <p class="eyebrow rv">Run it</p>
       <h2 class="h2 rv">Run it yourself.</h2>
-      <p class="lead rv">The drill needs Docker and Node. It builds a throwaway regtest network, so no real coins are involved.</p>
+      <p class="lead rv">The drill needs Docker and Node. It builds a throwaway regtest network, so no real coins are involved. Run every command from the project folder, the one that contains <code>package.json</code>.</p>
       <div class="cmds rv">
+        <div class="cmd">
+          <div class="cmd-head"><span>Go to the project folder first (adjust the path if you cloned it elsewhere)</span><button class="btn copy" type="button" data-copy="c8">Copy</button></div>
+          <code id="c8">cd lifeboat</code>
+        </div>
         <div class="cmd">
           <div class="cmd-head"><span>Open this page with the live drill button, then visit http://127.0.0.1:8080</span><button class="btn copy" type="button" data-copy="c0">Copy</button></div>
           <code id="c0">npm install &amp;&amp; npm run web</code>
@@ -696,20 +587,24 @@ html.rv-on .console.in .term .tl{opacity:1}
           <code id="c1">npm run demo</code>
         </div>
         <div class="cmd">
-          <div class="cmd-head"><span>Bake a read-only macaroon for the daemon (needs an admin macaroon once; add --restore for a restore macaroon)</span><button class="btn copy" type="button" data-copy="c6">Copy</button></div>
-          <code id="c6">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=&lt;admin macaroon&gt; LND_PORT=8080 npm run cli -- bake --out monitor.macaroon</code>
+          <div class="cmd-head"><span>The next commands are for your own lnd. Point LND_DIR at its data directory (~/.lnd is lnd's default); the paths below use the regtest folder, so use your network's folder instead</span><button class="btn copy" type="button" data-copy="c9">Copy</button></div>
+          <code id="c9">export LND_DIR=~/.lnd</code>
         </div>
         <div class="cmd">
-          <div class="cmd-head"><span>Run the backup daemon against your own lnd</span><button class="btn copy" type="button" data-copy="c2">Copy</button></div>
-          <code id="c2">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run daemon</code>
+          <div class="cmd-head"><span>Bake a read-only macaroon for the daemon (needs an admin macaroon once; add --restore for a restore macaroon)</span><button class="btn copy" type="button" data-copy="c6">Copy</button></div>
+          <code id="c6">LND_CERT=$LND_DIR/tls.cert LND_MACAROON=$LND_DIR/data/chain/bitcoin/regtest/admin.macaroon LND_PORT=8080 npm run cli -- bake --out monitor.macaroon</code>
+        </div>
+        <div class="cmd">
+          <div class="cmd-head"><span>Run the backup daemon against your own lnd (replace the example relays with relays you choose)</span><button class="btn copy" type="button" data-copy="c2">Copy</button></div>
+          <code id="c2">LND_CERT=$LND_DIR/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run daemon</code>
         </div>
         <div class="cmd">
           <div class="cmd-head"><span>Verify the backup on the relays matches your node (a restore dry run, exits 1 if not)</span><button class="btn copy" type="button" data-copy="c7">Copy</button></div>
-          <code id="c7">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- verify</code>
+          <code id="c7">LND_CERT=$LND_DIR/tls.cert LND_MACAROON=monitor.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- verify</code>
         </div>
         <div class="cmd">
-          <div class="cmd-head"><span>Restore on a fresh node created from the same seed</span><button class="btn copy" type="button" data-copy="c3">Copy</button></div>
-          <code id="c3">LND_CERT=&lt;lnd dir&gt;/tls.cert LND_MACAROON=restore.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- restore</code>
+          <div class="cmd-head"><span>Restore on a fresh node created from the same seed (bake restore.macaroon first with --restore)</span><button class="btn copy" type="button" data-copy="c3">Copy</button></div>
+          <code id="c3">LND_CERT=$LND_DIR/tls.cert LND_MACAROON=restore.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example LND_PORT=8080 npm run cli -- restore</code>
         </div>
       </div>
       <p class="warn rv">Only regtest has been tested end to end. Do not point the daemon at a node holding funds you cannot afford to lose.</p>
@@ -935,82 +830,102 @@ html.rv-on .console.in .term .tl{opacity:1}
 </script>
 
 <script>
-/* C) HERO — a self-drawn dot globe with relay nodes and packets; no third-party media */
+/* C) HERO — two self-drawn canvases (dim "ciphertext" ridges, and the same ridges lit with labels) and a
+   cursor lens that reveals the lit one through a soft circular mask. No third-party media. */
 (function(){
-  var c = document.getElementById('bgCanvas');
-  if (!c || !c.getContext) return;
-  var ctx = c.getContext('2d');
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var DPR = Math.min(window.devicePixelRatio || 1, 2), W = 0, H = 0, raf = 0;
-  var N = 1400, pts = [];
-  for (var i = 0; i < N; i++) {
-    var y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963229728653;
-    pts.push([Math.cos(th) * r, y, Math.sin(th) * r]);
+  var hero = document.getElementById('top'), lens = document.getElementById('heroLens');
+  var cBase = document.getElementById('artBase'), cLens = document.getElementById('artLens');
+  if (!hero || !lens || !cBase || !cLens || !cBase.getContext) return;
+  var N = 30, P = [], MARKS = [[10, .27, 'seed'], [15, .41, 'channel'], [19, .56, 'relay'], [22, .68, 'fingerprint'], [25, .35, 'backup event'], [26, .50, 'peer hint']];
+
+  function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  (function(){ var r = rng(11); for (var i = 0; i < N; i++) P.push({ f1: 5 + r() * 5, p1: r() * 6.28, f2: 12 + r() * 9, p2: r() * 6.28, f3: 26 + r() * 20, p3: r() * 6.28 }); })();
+  var HEX = (function(){ var r = rng(5), out = []; for (var i = 0; i < MARKS.length; i++) { var h = ''; for (var k = 0; k < 8; k++) h += '0123456789abcdef'[Math.floor(r() * 16)]; out.push(h); } return out; })();
+
+  function ridgeY(l, x, w, h){
+    var t = l / (N - 1), u = x / w, p = P[l];
+    var y = h * (0.56 + 0.44 * t) - h * (0.030 + 0.085 * t) * (0.6 * Math.sin(u * p.f1 + p.p1) + 0.3 * Math.sin(u * p.f2 + p.p2) + 0.1 * Math.sin(u * p.f3 + p.p3));
+    y -= h * 0.17 * (1 - 0.55 * t) * Math.exp(-Math.pow((u - 0.64) / 0.24, 2));
+    y -= h * 0.07 * (1 - t) * Math.exp(-Math.pow((u - 0.18) / 0.16, 2));
+    return y;
   }
-  function ll(lat, lon){
-    lat *= Math.PI / 180; lon *= Math.PI / 180;
-    return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
-  }
-  var relays = [ll(38, -100), ll(50, 8), ll(8, 78), ll(-28, 135)];
-  var TILT = 0.36;
-  function resize(){
-    var b = c.getBoundingClientRect();
-    W = b.width; H = b.height;
-    c.width = Math.round(W * DPR); c.height = Math.round(H * DPR);
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  }
-  function rot(p, a){
-    var x = p[0] * Math.cos(a) + p[2] * Math.sin(a), z = -p[0] * Math.sin(a) + p[2] * Math.cos(a);
-    var y2 = p[1] * Math.cos(TILT) - z * Math.sin(TILT), z2 = p[1] * Math.sin(TILT) + z * Math.cos(TILT);
-    return [x, y2, z2];
-  }
-  function slerp(a, b, t, lift){
-    var d = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), w = Math.acos(d), sw = Math.sin(w) || 1;
-    var k1 = Math.sin((1 - t) * w) / sw, k2 = Math.sin(t * w) / sw, h = 1 + lift * Math.sin(Math.PI * t);
-    return [(a[0] * k1 + b[0] * k2) * h, (a[1] * k1 + b[1] * k2) * h, (a[2] * k1 + b[2] * k2) * h];
-  }
-  function frame(ms){
-    ctx.clearRect(0, 0, W, H);
-    var R = Math.min(W * 0.46, H * 0.72), cx = W * 0.5, cy = H * 1.02, a = ms * 0.00005;
-    var g = ctx.createRadialGradient(cx, cy, R * 0.86, cx, cy, R * 1.14);
-    g.addColorStop(0, 'rgba(110,80,230,0.32)'); g.addColorStop(0.55, 'rgba(110,80,230,0.10)'); g.addColorStop(1, 'rgba(110,80,230,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.14, 0, 6.2832); ctx.fill();
-    ctx.strokeStyle = 'rgba(167,139,250,0.5)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI, 6.2832); ctx.stroke();
-    for (var i = 0; i < N; i++) {
-      var q = rot(pts[i], a);
-      if (q[2] < -0.15) continue;
-      var al = 0.14 + 0.82 * Math.max(0, (q[2] + 0.15) / 1.15), s = 0.7 + 1.5 * al;
-      ctx.fillStyle = 'rgba(167,139,250,' + al.toFixed(3) + ')';
-      ctx.fillRect(cx + q[0] * R - s / 2, cy - q[1] * R - s / 2, s, s);
-    }
-    var pr = relays.map(function(p){ return rot(p, a); });
-    for (var k = 0; k < pr.length; k++) {
-      var A = pr[k], B = pr[(k + 1) % pr.length];
-      if (A[2] < 0 || B[2] < 0) continue;
-      ctx.strokeStyle = 'rgba(196,181,253,0.35)'; ctx.lineWidth = 1; ctx.beginPath();
-      for (var j = 0; j <= 28; j++) {
-        var m = slerp(A, B, j / 28, 0.16);
-        if (j) ctx.lineTo(cx + m[0] * R, cy - m[1] * R); else ctx.moveTo(cx + m[0] * R, cy - m[1] * R);
+
+  function paint(cv, w, h, dpr, lit){
+    var ctx = cv.getContext('2d');
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = lit ? '#070403' : '#040406'; ctx.fillRect(0, 0, w, h);
+    var step = Math.max(4, Math.round(w / 260)), fill = lit ? '#0a0503' : '#040406';
+    for (var l = 0; l < N; l++) {
+      var t = l / (N - 1);
+      ctx.beginPath();
+      for (var x = -step; x <= w + step; x += step) { var y = ridgeY(l, x, w, h); if (x === -step) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.lineTo(w + step, h + 4); ctx.lineTo(-step, h + 4); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.beginPath();
+      for (x = -step; x <= w + step; x += step) { y = ridgeY(l, x, w, h); if (x === -step) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      if (lit) {
+        var violet = l % 9 === 4;
+        ctx.strokeStyle = violet ? 'rgba(167,139,250,' + (0.45 + 0.4 * t) + ')' : 'rgba(232,112,42,' + (0.30 + 0.65 * t) + ')';
+        ctx.lineWidth = 1.1 + 0.7 * t; ctx.shadowColor = violet ? 'rgba(167,139,250,.6)' : 'rgba(232,112,42,.7)'; ctx.shadowBlur = t > 0.5 ? 8 : 0;
+      } else {
+        ctx.strokeStyle = 'rgba(196,196,214,' + (0.10 + 0.30 * t + (l % 6 === 0 ? 0.12 : 0)) + ')';
+        ctx.lineWidth = 0.9 + 0.5 * t; ctx.shadowBlur = 0;
       }
-      ctx.stroke();
-      var t = ((ms / 2600) + k * 0.27) % 1, pk = slerp(A, B, t, 0.16);
-      ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.beginPath(); ctx.arc(cx + pk[0] * R, cy - pk[1] * R, 2.2, 0, 6.2832); ctx.fill();
+      ctx.stroke(); ctx.shadowBlur = 0;
     }
-    for (var n = 0; n < pr.length; n++) {
-      var P = pr[n]; if (P[2] < 0) continue;
-      var pulse = 0.5 + 0.5 * Math.sin(ms / 500 + n * 1.7), x = cx + P[0] * R, yy = cy - P[1] * R;
-      ctx.fillStyle = 'rgba(196,181,253,' + (0.12 + 0.12 * pulse).toFixed(3) + ')'; ctx.beginPath(); ctx.arc(x, yy, 9 + 5 * pulse, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, yy, 3, 0, 6.2832); ctx.fill();
+    // warm (lit) or cool (dim) glow over the front ridges
+    ctx.globalCompositeOperation = 'lighter';
+    var g = ctx.createRadialGradient(w * .62, h * .86, 0, w * .62, h * .86, Math.max(w, h) * .7);
+    if (lit) { g.addColorStop(0, 'rgba(232,112,42,.42)'); g.addColorStop(.5, 'rgba(120,50,20,.18)'); g.addColorStop(1, 'rgba(0,0,0,0)'); }
+    else { g.addColorStop(0, 'rgba(84,70,150,.24)'); g.addColorStop(.5, 'rgba(40,30,80,.10)'); g.addColorStop(1, 'rgba(0,0,0,0)'); }
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'source-over';
+    // markers: unreadable hex when dim, the plain word when lit
+    ctx.textBaseline = 'middle';
+    for (var m = 0; m < MARKS.length; m++) {
+      var mx = w * MARKS[m][1], my = ridgeY(MARKS[m][0], mx, w, h);
+      if (w < 640 && my > h * 0.66) continue; // keep the labels clear of the phone layout's text
+      ctx.beginPath(); ctx.arc(mx, my, lit ? 3.2 : 2.4, 0, 6.2832);
+      if (lit) { ctx.fillStyle = '#ffb27a'; ctx.shadowColor = 'rgba(232,112,42,.9)'; ctx.shadowBlur = 12; } else { ctx.fillStyle = 'rgba(196,196,214,.5)'; }
+      ctx.fill(); ctx.shadowBlur = 0;
+      if (lit) { ctx.font = '500 13px Inter, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillText(MARKS[m][2], mx + 10, my - 12); }
+      else { ctx.font = '11px ui-monospace, Menlo, monospace'; ctx.fillStyle = 'rgba(196,196,214,.38)'; ctx.fillText(HEX[m], mx + 8, my - 10); }
     }
+    // the top stays black so the headline sits on it
+    var v = ctx.createLinearGradient(0, 0, 0, h * 0.5);
+    v.addColorStop(0, 'rgba(0,0,0,1)'); v.addColorStop(.55, 'rgba(0,0,0,.82)'); v.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, w, h * 0.5);
   }
-  function loop(ms){ frame(ms); raf = requestAnimationFrame(loop); }
-  resize();
-  window.addEventListener('resize', function(){ resize(); if (reduced) frame(0); });
-  if (reduced) { frame(0); return; }
-  raf = requestAnimationFrame(loop);
-  document.addEventListener('visibilitychange', function(){
-    if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(loop);
-  });
+
+  var timer = 0;
+  function layout(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = hero.clientWidth, h = hero.clientHeight;
+    if (!w || !h) return;
+    paint(cBase, w, h, dpr, false); paint(cLens, w, h, dpr, true);
+  }
+  layout();
+  window.addEventListener('resize', function(){ clearTimeout(timer); timer = setTimeout(layout, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+
+  // the lens trails the cursor: raw position -> eased position, written as CSS variables
+  var mouse = { x: -999, y: -999 }, smooth = { x: -999, y: -999 }, shown = { x: -1e9, y: -1e9 }, raf = 0, visible = true;
+  window.addEventListener('pointermove', function(e){
+    var r = hero.getBoundingClientRect();
+    mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+  }, { passive: true });
+  function tick(){
+    smooth.x += (mouse.x - smooth.x) * 0.1; smooth.y += (mouse.y - smooth.y) * 0.1;
+    if (Math.abs(shown.x - smooth.x) > 0.05 || Math.abs(shown.y - smooth.y) > 0.05) {
+      shown.x = smooth.x; shown.y = smooth.y;
+      lens.style.setProperty('--mx', smooth.x.toFixed(1) + 'px'); lens.style.setProperty('--my', smooth.y.toFixed(1) + 'px');
+    }
+    raf = visible && !document.hidden ? requestAnimationFrame(tick) : 0;
+  }
+  function run(){ if (!raf) raf = requestAnimationFrame(tick); }
+  if ('IntersectionObserver' in window) new IntersectionObserver(function(en){ visible = en[0].isIntersecting; if (visible) run(); }).observe(hero);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) run(); });
+  run();
 })();
 </script>
 </body>

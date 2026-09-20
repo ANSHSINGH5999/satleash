@@ -8,7 +8,7 @@ Restore imports the newest valid backup into a **new LND created from the same 2
 
 1. Create a new node from the seed (`lncli create`, existing seed). Wait for it to sync.
 2. Bake a restore macaroon from an admin macaroon: `npm run cli -- bake --restore --out restore.macaroon`.
-3. `LND_CERT=... LND_MACAROON=restore.macaroon RELAYS=wss://a,wss://b npm run cli -- restore`.
+3. `LND_CERT=$LND_DIR/tls.cert LND_MACAROON=restore.macaroon RELAYS=wss://relay-one.example,wss://relay-two.example npm run cli -- restore` (use your own relays and lnd directory).
 4. Keep the node running and online. Peers force-close once they see the request; funds arrive after the closes confirm (timelocks apply).
 
 Internally: wait for `SERVER_ACTIVE`, derive the backup key through LND, pick the newest valid decryptable event across relays, validate the payload, `RestoreChannelBackups`, then redial the peer hints for several rounds (LND's own single dial can be torn down mid-handshake when there are several channels to one peer).
