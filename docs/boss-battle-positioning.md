@@ -2,7 +2,7 @@
 
 Track texts are from Devfolio's `getHackathonTracksAndPrizes` for `boss-battle` (retrieved 2026-09-19; $1,000 per track). The event overview page names three "boss fights", Privacy, Nostr and AI, which line up with Cypherpunk, Freedom Stack and Machine Money; that mapping is my reading, not the organisers' statement. No judging criteria are published on the overview page. Do not change the product to force a fit.
 
-## Freedom Stack: primary submission
+## Freedom Stack: primary track
 
 | | |
 |---|---|

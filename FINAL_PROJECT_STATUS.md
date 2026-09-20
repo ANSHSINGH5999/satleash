@@ -8,8 +8,8 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 
 | Item | Status |
 |---|---|
-| Local commits | `3f4f096` feat: freeze Lifeboat hackathon release candidate; `024e71a` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local, nothing pushed |
-| Clean clone | **PASS** at `024e71a`: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `3f4f096`) had one flaky e2e check, fixed in `024e71a` |
+| Local commits | `92760ef` feat: freeze Lifeboat hackathon release candidate; `3d91ba3` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local, nothing pushed |
+| Clean clone | **PASS** at `3d91ba3`: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `92760ef`) had one flaky e2e check, fixed in `3d91ba3` |
 | Tests | `npm run check`: typecheck clean, **161 / 161** pass (22 files); 2026-09-20 after a fresh `npm ci` |
 | E2E | **46 / 46** real-LND checks (regtest, Docker) |
 | Benchmark | Freeze run through the UI: **37.6 s** total, **24.0 s** wipe to recovery, 1,492,866 of 1,493,060 sats, 194 sats fees, relays 2/0 accepted, 1 of 2 reachable at restore, verification verified. Known benchmark 37.9 s / 24.3 s and earlier range 36.9 to 40.9 s: **no material difference** |
@@ -46,7 +46,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Real-LND e2e checks | 24 | 41 | **46** |
 | Recovery drill | 2 channels, 1 relay | same | 2 channels, **2 relays, one switched off during restore** |
 
-Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 36.9 to 40.9 s across ten runs (section G).
+Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 36.4 to 40.9 s across eleven runs (section G; the 36.4 s run is the final QA run).
 
 ## C. Bugs fixed (each has a regression test)
 
@@ -128,7 +128,7 @@ Ready locally: README, docs (`docs/`), `submission/` package, Devfolio copy (`su
 
 ## Q. Known limitations
 
-The landing hero's orange button (white on `#e8702a`, the supplied design's colours) has 3.1:1 contrast, below WCAG AA (`docs/landing-design.md`); restore closes channels and needs peers online; about 200 channels per backup; LND only (0.20 used); regtest-verified only; public relay retention unmeasured; Chrome only; relay edits in the console are session-only; both pages load fonts from Google; no license file; the console token is readable by any local process (not a multi-user service).
+The landing hero button was below WCAG AA contrast (white on `#e8702a`, 3.1:1) and was fixed in the final QA (dark text, 5.73:1; `docs/landing-design.md`); no full WCAG audit was run; restore closes channels and needs peers online; about 200 channels per backup; LND only (0.20 used); regtest-verified only; public relay retention unmeasured; Chrome only; relay edits in the console are session-only; both pages load fonts from Google; MIT license (`LICENSE`); the console token is readable by any local process (not a multi-user service).
 
 ## R. Exact next actions (need the owner)
 

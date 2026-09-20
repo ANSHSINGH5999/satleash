@@ -22,7 +22,7 @@ The landing hero and navigation follow a supplied hero design (a full-screen her
 
 ## Known shortfalls
 
-- **Contrast:** white text on the design's orange (`#e8702a`) is **3.1 : 1**, below the 4.5 : 1 WCAG AA needs for 14 px text (the hover colour `#d2611f` is 3.84 : 1). Dark text (`#111827`) on that orange would be 5.73 : 1. The colour and white text were kept because they are the design; change them if AA matters more. The colour-variable contrast test in `ui.test.ts` covers the ink colours, not this button.
+- **Contrast:** white text on the design's orange (`#e8702a`) was **3.1 : 1**, below the 4.5 : 1 WCAG AA needs for 14 px text (hover `#d2611f`: 3.84 : 1). **Fixed 2026-09-20:** the `.hero-cta` text colour is now `#111827` (5.73 : 1 at rest, 4.62 : 1 on hover); the orange itself is unchanged. `ui.test.ts` now asserts both states. The test covers the listed colour variables and button pairs only; it is not a full accessibility audit and no WCAG conformance is claimed.
 - Verified in Chrome only. The mask uses `mask-image` with a `-webkit-` prefix; Firefox and Safari were not tested.
 - Touch: the lens follows a dragging finger only while the browser reports pointer events (it stops when the browser takes the drag as a scroll).
 

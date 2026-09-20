@@ -414,7 +414,7 @@ test('console accessibility: landmarks, one visible h1, every control has a name
   }
 });
 
-test('colour contrast: every text colour used on the console and the landing page meets WCAG AA (4.5:1) on its background', () => {
+test('colour contrast: the listed text colours and button pairs on the console and the landing page reach 4.5:1 (WCAG AA for normal text); this is not a full accessibility audit', () => {
   const lum = ([r, g, b]: number[]) => {
     const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
@@ -440,6 +440,9 @@ test('colour contrast: every text colour used on the console and the landing pag
   const land = readFileSync(join(ROOT, 'web/index.html'), 'utf8');
   const lv = (name: string) => new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(land)![1];
   for (const t of ['ink', 'ink-muted', 'ink-soft', 'ink-dim', 'accent', 'ok']) assert.ok(ratio(lv(t), '#000000') >= 4.5, `landing --${t} is ${ratio(lv(t), '#000000').toFixed(2)}:1`);
+  const cta = /\.hero-cta\{[^}]*background:(#[0-9a-f]{6});color:(#[0-9a-f]{6})/i.exec(land)!;
+  const ctaHover = /\.hero-cta:hover\{background:(#[0-9a-f]{6})/i.exec(land)![1];
+  for (const [state, back] of [['rest', cta[1]], ['hover', ctaHover]]) assert.ok(ratio(cta[2], back) >= 4.5, `hero button (${state}) is ${ratio(cta[2], back).toFixed(2)}:1`);
 });
 
 /* ---------------------------------- landing ---------------------------------- */

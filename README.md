@@ -12,7 +12,7 @@ An LND node's channel state lives on one machine. The static channel backup (SCB
 
 ## Solution
 
-A small daemon publishes every backup change to several Nostr relays as one encrypted, addressable event. The key that signs and encrypts it is derived from the wallet seed inside LND, so a node recreated from the same 24 words finds its own backup again. "Seed-only" means no other secret or file is needed; the backup itself lives on the relays. A verification step checks the relay copy against the live node, and a drill wipes a regtest node and restores it for real.
+A small daemon publishes every backup change to several Nostr relays as one encrypted, addressable event. The key that signs and encrypts it is derived from the wallet seed inside LND, so a node recreated from the same 24 words finds its own backup again. "Seed-only" means no other secret or file is needed; the backup itself lives on the relays. You still have to know the address of at least one relay that holds it: relay URLs are not derived from the seed, so keep them with the seed (they are not secret). A verification step checks the relay copy against the live node, and a drill wipes a regtest node and restores it for real.
 
 ## Why Lifeboat
 
@@ -42,7 +42,7 @@ Backup payloads are encrypted before relay publication, and relay events are ind
 
 ## Recovery drill
 
-`npm run demo` (or the button on the landing page) creates a throwaway regtest network with two LND nodes and two relays, opens two channels, publishes the backup, verifies it, deletes the node, switches one relay off, restores from the seed and the relays and waits for funds. Latest recorded run (2026-09-19): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 37.9 s for the whole drill (24.3 s from wipe to funds back), with one of two relays switched off during the restore. Timings vary per run; the page shows the numbers of the run you start. About 15 s of the recovery is a fixed redial schedule, not measured work. Details: [recovery](docs/recovery.md).
+`npm run demo` (or the button on the landing page) creates a throwaway regtest network with two LND nodes and two relays, opens two channels, publishes the backup, verifies it, deletes the node, switches one relay off, restores from the seed and the relays and waits for funds. Latest verified run (2026-09-20, final local QA): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 36.4 s for the whole drill (23.9 s from wipe to funds back), with one of two relays switched off during the restore. The landing page's built-in "recorded run" is the 2026-09-19 one (37.9 s, 24.3 s). Timings vary per run (36.4 to 40.9 s so far); the page shows the numbers of the run you start. About 15 s of the recovery is a fixed redial schedule, not measured work. Details: [recovery](docs/recovery.md).
 
 ## Features
 
@@ -138,7 +138,7 @@ CI is written (`.github/workflows/ci.yml`) but **has not been run on GitHub**: o
 
 ## Public relay test
 
-`npm run cli -- relay-test wss://relay.example --yes` publishes one dummy event, signed by a throwaway key in its own namespace and shaped like a backup but made of random bytes, reads it back, validates it, and asks the relay to delete it. It never touches your node or a real backup. One-shot results on four public relays (three passed on some attempt, one was intermittent, one timed out once) are in [docs/public-relay-testing.md](docs/public-relay-testing.md). Retention over time is unmeasured.
+`npm run cli -- relay-test wss://relay.example --yes` publishes one dummy event, signed by a throwaway key in its own namespace and shaped like a backup but made of random bytes, reads it back, validates it, and asks the relay to delete it. It never touches your node or a real backup. One-shot results on four public relays (nos.lol and relay.primal.net passed both runs, relay.damus.io was intermittent, relay.nostr.band timed out once and was not retried) are in [docs/public-relay-testing.md](docs/public-relay-testing.md). Retention over time is unmeasured.
 
 ## Threat model
 
@@ -149,16 +149,17 @@ CI is written (`.github/workflows/ci.yml`) but **has not been run on GitHub**: o
 - **Restore closes your channels.** Funds return on-chain; channel state does not come back.
 - **Peers must be online** to force-close.
 - **About 200 channels per backup** (NIP-44's 64 KB plaintext limit; no chunking).
+- **Relay addresses are not in the seed.** Restore needs the 24 words and the URL of at least one relay that still holds the backup; Lifeboat has no default relay.
 - **Relays can withhold or serve stale data.** Use at least two independent relays; `verify` shows divergence. Public relay durability is unmeasured.
 - **Regtest-verified only.** Testnet and mainnet were not run.
 - **LND only**, and only LND 0.20 was used.
 - **Verified in Chrome only**; Firefox and Safari were not tested.
-- The landing hero's orange button has 3.1:1 contrast (design-specified colours), below WCAG AA: [docs/landing-design.md](docs/landing-design.md).
+- **Accessibility is only partly checked.** The hero button text was changed to dark (`#111827` on `#e8702a`, 5.73:1; 4.62:1 on hover) after a contrast check, and the listed text-colour pairs reach 4.5:1 ([docs/landing-design.md](docs/landing-design.md)). No full WCAG audit was run and no conformance is claimed.
 - **License:** MIT, see [LICENSE](LICENSE).
 
 ## BOSS Battle track
 
-Submitted under **Freedom Stack**: Nostr as storage and identity for a system whose useful property does not depend on trusting whoever operates it. Honest gap: no ecash. Cypherpunk and Machine Money are weak fits and not claimed. Reasoning: [docs/boss-battle-positioning.md](docs/boss-battle-positioning.md).
+Intended track (not yet submitted): **Freedom Stack**: Nostr as storage and identity for a system whose useful property does not depend on trusting whoever operates it. Honest gap: no ecash. Cypherpunk and Machine Money are weak fits and not claimed. Reasoning: [docs/boss-battle-positioning.md](docs/boss-battle-positioning.md).
 
 ## Demo
 

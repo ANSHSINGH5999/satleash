@@ -15,7 +15,7 @@ Internally: wait for `SERVER_ACTIVE`, derive the backup key through LND, pick th
 
 ## Measured (regtest drill, 2026-09-18/19)
 
-Two channels, 1,493,060 sats: 1,492,866 recovered on-chain, 194 sats in fees. About 38 s for the whole drill (fresh network, two channels, backup, wipe, restore, wait for funds). The drill prints its own timings (`discoverMs`, `importMs`, `recoveryMs`, `totalMs`); the e2e suite also restored 3 channels using only the restricted restore macaroon.
+Two channels, 1,493,060 sats: 1,492,866 recovered on-chain, 194 sats in fees. About 36 to 41 s for the whole drill (36.4 s in the 2026-09-20 QA run) (fresh network, two channels, backup, wipe, restore, wait for funds). The drill prints its own timings (`discoverMs`, `importMs`, `recoveryMs`, `totalMs`); the e2e suite also restored 3 channels using only the restricted restore macaroon.
 
 ## What can go wrong
 

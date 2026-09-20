@@ -77,6 +77,7 @@ TypeScript (Node 22+), LND 0.20 REST, `nostr-tools` (NIP-44, NIP-78), `@noble/cu
 ## Known limitations
 
 - A restore closes channels: funds return on-chain and peers must be online to force-close
+- Recovery needs the seed and the URL of at least one relay that still holds the backup; relay URLs are not derived from the seed
 - About 200 channels per backup (NIP-44's 64 KB limit; no chunking)
 - LND only; regtest-verified; testnet and mainnet were not run
 - Public relays were tested only with a one-shot dummy-event test (results were intermittent on one relay); retention over time is unmeasured
@@ -100,5 +101,5 @@ Chunked backups for large nodes; a multi-week public-relay retention test; a tes
 
 ## Evidence (measured)
 
-- Recovery drill, 2026-09-19: 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 37.9 s for the whole drill (24.3 s from wipe to funds back), with one of two relays switched off during the restore
+- Recovery drill, 2026-09-20 (final local QA): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 36.4 s for the whole drill (23.9 s from wipe to funds back), with one of two relays switched off during the restore
 - Tests: 161 unit, integration and browser tests pass; 46 real-LND end-to-end checks pass; `npm audit` reports 0 vulnerabilities

@@ -1,6 +1,6 @@
 # Screenshots
 
-All ten were captured on 2026-09-19 from the **real running application** with headless Chrome (`scripts/capture-screenshots.mjs`): the console from `npm run playground` against a live regtest LND, the drill screens from a real drill started with the page's own button. Nothing is mocked up. The one diagram (09) is rendered from `docs/diagrams/architecture.svg`.
+All ten were captured on 2026-09-19 (`01-landing.png` was re-captured on 2026-09-20 after the hero button's text colour was changed for contrast) from the **real running application** with headless Chrome (`scripts/capture-screenshots.mjs`): the console from `npm run playground` against a live regtest LND, the drill screens from a real drill started with the page's own button. Nothing is mocked up. The one diagram (09) is rendered from `docs/diagrams/architecture.svg`.
 
 | # | File | What it shows | Source |
 |---|---|---|---|
