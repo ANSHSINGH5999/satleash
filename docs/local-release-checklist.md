@@ -27,7 +27,7 @@ Release candidate for a **future** publication. This phase is local only: nothin
 
 ## Still NOT verified (do not claim)
 
-Testnet and mainnet; Firefox and Safari; Node 22; remote GitHub Actions; public relay retention over time (public relays were tested one-shot with dummy data only). *Update 2026-09-20: Node 22.23.2 was later validated locally, and the first GitHub Actions run was red and has not yet been rerun; see `FINAL_PROJECT_STATUS.md`.*
+Testnet and mainnet; Firefox and Safari; Node 22; remote GitHub Actions; public relay retention over time (public relays were tested one-shot with dummy data only). *Update 2026-09-20 (completed): Node 22.23.2 was later validated locally (161 / 161 tests, 46 / 46 e2e) and on GitHub Actions. The first run (commit `346215c`) and the next (`0127152`) were red and were fixed; Actions was then rerun and run 35503145035 on commit `0cb7a92` succeeded, and the documentation-only commit `56f2d5d` also succeeded (run 35504042620). Remote `main` was `56f2d5d` when this note was written. The e2e suite is local only (Docker). See `FINAL_PROJECT_STATUS.md`.*
 
 ## Decisions that need the owner
 

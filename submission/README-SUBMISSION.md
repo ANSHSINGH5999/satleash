@@ -22,7 +22,7 @@ Status: **prepared locally and not submitted to Devfolio** (the repository and t
 
 1. License: MIT chosen and added (`LICENSE`; comparison in [../docs/license-decision.md](../docs/license-decision.md)).
 2. Repository: public at https://github.com/ANSHSINGH5999/lifeboat; its URL is in the README and in `devfolio-submission.md`. The landing page is hosted at https://boss-battle-psi.vercel.app; the recovery drill itself is local (Docker, regtest).
-3. Rerun GitHub Actions after the fixes are pushed and note the real result (the first run, commit `346215c`, was red on Node 22; the fixes are validated locally only).
+3. Done: GitHub Actions was rerun after the fixes were pushed and passed (run 35503145035 on commit `0cb7a92`). The subsequent documentation-only commit `56f2d5d` also passed (run 35504042620). The earlier runs on `346215c` and `0127152` were red and were fixed.
 4. Record the video with [../docs/video-checklist.md](../docs/video-checklist.md) and add its URL.
 5. Re-read the live BOSS Battle gallery for overlap and re-check the numbers against the final take.
 6. Submit on Devfolio yourself. Nothing has been submitted.
