@@ -1,6 +1,6 @@
 # Local release checklist
 
-Release candidate for a **future** publication. This phase is local only: nothing is hosted, pushed, submitted or uploaded, and no remote is configured. Dates are the day each item was verified; "pending" items are filled in after the commit and the clean-clone test.
+Release candidate for a **future** publication. This phase is local only: nothing is hosted, pushed, submitted or uploaded, and no remote is configured (historical: the repository and landing page were published later; see `FINAL_PROJECT_STATUS.md` for the current status). Dates are the day each item was verified; "pending" items are filled in after the commit and the clean-clone test.
 
 | Done | Item | Result |
 |---|---|---|
@@ -18,16 +18,16 @@ Release candidate for a **future** publication. This phase is local only: nothin
 | [x] | Documentation | counts, benchmark, Chrome-only, public-relay-partial, testnet NOT TESTED and remote CI NOT RUN checked for consistency |
 | [x] | Screenshots | 10 reviewed: no personal data, secrets or failed states; REGTEST badge and product name correct |
 | [x] | Submission package | `submission/`: links to maintained documents, real test results, explicit URL placeholders |
-| [x] | Local Git commit | `92760ef` (freeze) and `3d91ba3` (fix), plus a docs-only commit recording the clean-clone result; authored with the GitHub noreply identity. Nothing pushed |
+| [x] | Local Git commit | `92760ef` (freeze) and `3d91ba3` (fix), plus a docs-only commit recording the clean-clone result; authored with the GitHub noreply identity. Nothing pushed (at the time of the freeze) |
 | [x] | Clean local clone | `git clone` from the local repository into a Docker-shareable folder; tree identical to the committed working copy; folder deleted afterwards |
 | [x] | Clean clone test | At commit `3d91ba3`: `npm ci`, **159 / 159** tests, audit 0, **44 / 44** e2e, `demo:reset`, `demo` (recovered 1,492,866 of 1,493,060 sats, 194 sats fees, 36.9 s), `playground` READY, `demo:check` READY. The first clone (`92760ef`) had one flaky e2e check (a `verifyNow` race), fixed in `3d91ba3` and covered by a regression test |
-| [x] | No remote configured | `git remote -v` prints nothing |
+| [x] | No remote configured | `git remote -v` printed nothing (at the time of the freeze; `origin` was added when the repository was published) |
 | [x] | No public deployment | no deployment configuration exists; nothing is hosted |
 | [x] | No Devfolio submission | nothing submitted |
 
 ## Still NOT verified (do not claim)
 
-Testnet and mainnet; Firefox and Safari; Node 22; remote GitHub Actions; public relay retention over time (public relays were tested one-shot with dummy data only).
+Testnet and mainnet; Firefox and Safari; Node 22; remote GitHub Actions; public relay retention over time (public relays were tested one-shot with dummy data only). *Update 2026-09-20: Node 22.23.2 was later validated locally, and the first GitHub Actions run was red and has not yet been rerun; see `FINAL_PROJECT_STATUS.md`.*
 
 ## Decisions that need the owner
 

@@ -97,14 +97,22 @@ class Browser {
     await this.ev(`(()=>{const e=document.querySelector(${JSON.stringify(sel)});e.value=${JSON.stringify(text)};e.dispatchEvent(new Event('input',{bubbles:true}))})()`);
   }
   text = (sel: string) => this.ev<string>(`document.querySelector(${JSON.stringify(sel)}).textContent`);
-  stop() {
+  async stop() {
     try {
       this.ws?.close();
     } catch {
       // ignore
     }
-    this.proc?.kill();
-    rmSync(this.profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    if (this.proc && this.proc.exitCode === null) {
+      const exited = new Promise((r) => this.proc!.once('exit', r));
+      this.proc.kill();
+      await Promise.race([exited, sleep(5000)]);
+    }
+    try {
+      rmSync(this.profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch {
+      // Chrome's helper processes may still be flushing into the profile; a leftover temp directory must not fail a test
+    }
   }
 }
 
@@ -187,7 +195,7 @@ test('console: hostile strings from lnd, relays and logs are shown as text on ev
     assert.ok((await b.text('#logs')).includes(EVIL(13)));
     assert.deepEqual(clean(b), [], 'no CSP violations or page errors');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -217,7 +225,7 @@ test('console: tabs follow the WAI-ARIA pattern (roles, selection, roving tabind
     await b.ev(`location.hash = '#security'`);
     await b.until(`document.getElementById('tab-security').getAttribute('aria-selected') === 'true'`, 3000, 'hash routing');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -247,7 +255,7 @@ test('console: shows real evidence, and the page follows the state as it changes
     assert.match(await b.text('#mainnet'), /only been tested on regtest/);
     assert.deepEqual(clean(b), []);
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -265,7 +273,7 @@ test('console: losing the server shows a banner and keeps the last known state; 
     await b.until(`!document.getElementById('banner').classList.contains('show')`, 9000, 'banner cleared');
     assert.equal(await b.text('#healthText'), 'Healthy');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -313,7 +321,7 @@ test('console: relay management through the UI (add, confirm-before-public, disa
     assert.equal(m.relays.all().length, 1);
     assert.deepEqual(clean(b).filter((p) => !/40\d/.test(p)), []);
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -344,7 +352,7 @@ test('console: the public relay test needs an explicit acknowledgement and repor
     assert.match(txt, /The relay ignored the deletion request/, 'a relay that keeps the event is reported, not glossed over');
     assert.equal(await b.ev(`document.querySelector('#testResult .item:last-child').dataset.s`), 'warn');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -363,7 +371,7 @@ test('console: a failing action tells the operator what happened, why, the impac
     assert.match(t, /Request id: [0-9a-f]{8}/);
     assert.equal(await b.ev(`document.getElementById('verifyBtn').disabled`), false, 'the button is usable again');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -379,7 +387,7 @@ test('console without a node explains how to connect, and does not error', { ski
     assert.match(await b.text('#empty'), /npm run playground/);
     assert.deepEqual(clean(b).filter((p) => !/404/.test(p)), []);
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -409,7 +417,7 @@ test('console accessibility: landmarks, one visible h1, every control has a name
     assert.ok(r.liveRegions >= 2 && r.roleAlert >= 2, 'status and error changes are announced');
     assert.ok(r.tablistLabel);
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -489,7 +497,7 @@ test('landing: the live drill button runs a drill and the page tracks stages, nu
     assert.ok((await b.text('#termPre')).includes('recovered 890 of 900'));
     assert.deepEqual(clean(b), [], 'no CSP violations or page errors');
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -522,7 +530,7 @@ test('landing: the hero draws its own art, a cursor lens follows the pointer, no
     assert.ok(r.lens.warm > 20, `the lit layer is drawn in warm colours: ${JSON.stringify(r.lens)}`);
     assert.equal(r.h1, 1);
     assert.equal(r.h1Text, 'Back up your node. Verify. Recover.');
-    assert.match(r.oneLiner, /Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file\./);
+    assert.match(r.oneLiner, /Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed and a known relay URL, with no other secret or key file\./);
     assert.equal(r.cta, 'Run recovery drill');
     assert.equal(r.ctaBg, 'rgb(232, 112, 42)');
     assert.match(r.h1a, /Playfair Display.*\|italic/);
@@ -579,7 +587,7 @@ test('landing: the hero draws its own art, a cursor lens follows the pointer, no
     assert.equal(await b.ev(`(()=>{const c=getComputedStyle(document.querySelector('.h1-a'));const z=getComputedStyle(document.querySelector('.hero-base'));return c.opacity+'|'+c.animationName+'|'+z.animationName})()`), '1|none|none');
     assert.deepEqual(clean(b), []);
   } finally {
-    b.stop();
+    await b.stop();
     await app.close();
   }
 });
@@ -600,7 +608,7 @@ test('landing without the server (static hosting) keeps the recorded run and a d
     assert.equal(await b.ev(`document.querySelector('.nav-links a[href="/console"]').hidden`), true, 'console link stays hidden without the server');
     await waitFor(() => true);
   } finally {
-    b.stop();
+    await b.stop();
     s.closeAllConnections();
     s.close();
   }

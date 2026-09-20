@@ -1,8 +1,12 @@
 import * as nip44 from 'nostr-tools/nip44';
-import { SimplePool } from 'nostr-tools/pool';
+import { SimplePool, useWebSocketImplementation } from 'nostr-tools/pool';
 import { finalizeEvent, getPublicKey, verifyEvent, type Event } from 'nostr-tools/pure';
 import WebSocket from 'ws';
 import { MAX_PAYLOAD_BYTES } from './payload.js';
+
+// nostr-tools defaults to the global WebSocket. On Node 22 its onerror handler calls close(), which fires another error inside
+// undici, recursing until the stack overflows: any unreachable relay crashed the process. The `ws` package does not do this.
+useWebSocketImplementation(WebSocket);
 
 /** NIP-78 application-specific data: addressable, so relays keep only the newest per (pubkey, d). */
 export const KIND = 30078;

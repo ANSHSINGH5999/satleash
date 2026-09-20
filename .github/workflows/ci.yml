@@ -16,5 +16,5 @@ jobs:
       - run: npm run check   # typecheck + unit + browser tests (Chrome is preinstalled on ubuntu-latest; openssl is used by the lnd client tests)
         env:
           CI: "1"
-      # This workflow has not been run on GitHub yet: only the same commands were run locally.
+      # The first GitHub run (commit 346215c) was red on Node 22; the fixes are validated locally on Node 22 and 26 but this workflow has not yet been rerun.
       # The regtest e2e (npm run e2e) needs Docker and takes a few minutes; run it on demand rather than on every push.

@@ -4,6 +4,8 @@
 
 Restore imports the newest valid backup into a **new LND created from the same 24-word seed**, then waits for the peers to force-close. Funds come back on-chain; the channels themselves do not survive. That is LND's Static Channel Backup design (data-loss protection), not something Lifeboat can change.
 
+You need the seed (the only secret) and the URL of at least one relay that still holds the backup; relay URLs are not derived from the seed. No separate Lifeboat key or key file is required.
+
 ## Steps
 
 1. Create a new node from the seed (`lncli create`, existing seed). Wait for it to sync.
@@ -15,7 +17,7 @@ Internally: wait for `SERVER_ACTIVE`, derive the backup key through LND, pick th
 
 ## Measured (regtest drill, 2026-09-18/19)
 
-Two channels, 1,493,060 sats: 1,492,866 recovered on-chain, 194 sats in fees. About 36 to 41 s for the whole drill (36.4 s in the 2026-09-20 QA run) (fresh network, two channels, backup, wipe, restore, wait for funds). The drill prints its own timings (`discoverMs`, `importMs`, `recoveryMs`, `totalMs`); the e2e suite also restored 3 channels using only the restricted restore macaroon.
+Two channels, 1,493,060 sats: 1,492,866 recovered on-chain, 194 sats in fees. About 40 s for the whole drill and ~24 s from wipe to funds back (latest recorded run: 39.33 s and 24.226 s; timings vary per run, roughly 36 to 41 s observed, and are not a guarantee) (fresh network, two channels, backup, wipe, restore, wait for funds). The drill prints its own timings (`discoverMs`, `importMs`, `recoveryMs`, `totalMs`); the e2e suite also restored 3 channels using only the restricted restore macaroon.
 
 ## What can go wrong
 

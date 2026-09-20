@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lifeboat — Back up, verify, recover your Lightning node</title>
-<meta name="description" content="Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file. Demonstrated on regtest with real LND nodes.">
+<meta name="description" content="Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed and a known relay URL, with no other secret or key file. Demonstrated on regtest with real LND nodes.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23a78bfa' stroke-width='5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -394,7 +394,7 @@ html.rv-on .console.in .term .tl{opacity:1}
     </div>
 
     <div class="hero-left hero-anim hero-fade" style="animation-delay:.7s">
-      <p>Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file.</p>
+      <p>Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed and a known relay URL, with no other secret or key file.</p>
     </div>
 
     <div class="hero-right hero-anim hero-fade" style="animation-delay:.85s">
@@ -408,7 +408,7 @@ html.rv-on .console.in .term .tl{opacity:1}
       <p class="eyebrow rv">Problem, solution, how it works</p>
       <h2 class="h2 rv">Three moves. One seed.</h2>
       <p class="lead rv"><strong>Problem.</strong> An LND node's channel state lives on one machine. The static channel backup that protects it is a file someone has to keep copying, and it often sits on the machine that just died. If the copy is stale or missing, the money in channels depends on peers.</p>
-      <p class="lead rv"><strong>Solution.</strong> Lifeboat puts every backup where a wiped node can still find it, using nothing but the 24 words you already keep, and checks that what the relays hold still matches the node.</p>
+      <p class="lead rv"><strong>Solution.</strong> Lifeboat puts every backup where a wiped node can still find it, using the 24 words you already keep as the only secret (plus the address of a relay that holds it), and checks that what the relays hold still matches the node.</p>
       <ol class="steps rv">
         <li>
           <span class="step-n">01</span>
@@ -456,7 +456,7 @@ html.rv-on .console.in .term .tl{opacity:1}
       <p class="lead rv">A full disaster drill on regtest: two channels, a complete wipe of lnd's state, and a restore that starts from the seed and the relays. Start it here and the page drives the real code on your machine.</p>
       <div class="console rv" id="console" data-state="recorded">
         <div class="console-head">
-          <div class="status" id="status" role="status" aria-live="polite"><i class="dot"></i><span id="statusText">Recorded run</span><em id="elapsed">19 Sep 2026</em></div>
+          <div class="status" id="status" role="status" aria-live="polite"><i class="dot"></i><span id="statusText">Recorded run</span><em id="elapsed">20 Sep 2026</em></div>
           <button class="btn btn-lg btn-primary run-btn" id="runBtn" type="button" disabled>Start the drill</button>
         </div>
         <p class="console-note" id="modeNote">Live mode is off. Start this page with <code>npm run web</code> and this button runs the real drill on your machine. Below is a recorded run.</p>
@@ -482,19 +482,19 @@ html.rv-on .console.in .term .tl{opacity:1}
           <li id="ck-fp" data-s="pass">Restored backup has the published fingerprint</li>
         </ul>
         <div class="metrics" id="metrics" role="group" aria-label="Recovery metrics measured by the drill">
-          <div><span>Total drill time</span><b id="m-total">37.9 s</b></div>
-          <div><span>Recovery time (wipe to funds back)</span><b id="m-recovery">24.3 s</b></div>
+          <div><span>Total drill time</span><b id="m-total">39.3 s</b></div>
+          <div><span>Recovery time (wipe to funds back)</span><b id="m-recovery">24.2 s</b></div>
           <div><span>Backup size</span><b id="m-bytes">1.8 KB</b></div>
-          <div><span>lnd backup export</span><b id="m-export">13 ms</b></div>
-          <div><span>Encryption and signing</span><b id="m-encrypt">5.5 ms</b></div>
+          <div><span>lnd backup export</span><b id="m-export">15 ms</b></div>
+          <div><span>Encryption and signing</span><b id="m-encrypt">5.6 ms</b></div>
           <div><span>Publish time</span><b id="m-publish">10 ms</b></div>
-          <div><span>Verification (restore dry run)</span><b id="m-verify">41 ms</b></div>
-          <div><span>Discovery time</span><b id="m-discover">24 ms</b></div>
-          <div><span>Import into lnd</span><b id="m-import">85 ms</b></div>
+          <div><span>Verification (restore dry run)</span><b id="m-verify">32 ms</b></div>
+          <div><span>Discovery time</span><b id="m-discover">32 ms</b></div>
+          <div><span>Import into lnd</span><b id="m-import">92 ms</b></div>
           <div><span>Fees paid</span><b id="m-fees">194 sats</b></div>
           <div><span>Relays accepted / failed</span><b id="m-relays">2 / 0</b></div>
           <div><span>Relays reachable at restore</span><b id="m-atrestore">1 of 2</b></div>
-          <div class="fp"><span>Backup fingerprint (channel set)</span><b id="m-fp" class="mono">b1208e68a3cdee647689fb38e25c7514e1e7f446bac30bcab838b06fd73f3b53</b></div>
+          <div class="fp"><span>Backup fingerprint (channel set)</span><b id="m-fp" class="mono">ee5c0628d3948d0348eebdd3a84012e93343e6bdf097216c2330c6659d6bb018</b></div>
         </div>
         <div class="term" id="term">
           <div class="term-bar"><span>npm run demo</span><span id="termTag">recorded output</span></div>
@@ -504,9 +504,9 @@ html.rv-on .console.in .term .tl{opacity:1}
 <span class="tl h" style="--i:2">== fund alice and open channel #1 to bob</span>
 
 <span class="tl h" style="--i:3">== start Nostr backup daemon, then open channel #2 (must be picked up automatically)</span>
-<span class="tl" style="--i:4">backup identity (Nostr pubkey derived from seed): 40425e9d1606e388b82ad6ee8e480f9835eb33d15ccd3f8887e231a7563fa041</span>
+<span class="tl" style="--i:4">backup identity (Nostr pubkey derived from seed): c0fc21f6bfd1c440e8efa316ee1dc98f8086663feb17530cc0870c9992fae1ee</span>
 <span class="tl" style="--i:5">published: 1ch-&gt;2relay, 2ch-&gt;2relay</span>
-<span class="tl" style="--i:6">backup fingerprint (channel set): b1208e68a3cdee647689fb38e25c7514e1e7f446bac30bcab838b06fd73f3b53</span>
+<span class="tl" style="--i:6">backup fingerprint (channel set): ee5c0628d3948d0348eebdd3a84012e93343e6bdf097216c2330c6659d6bb018</span>
 <span class="tl" style="--i:7">verify before the disaster: verified, 2 of 2 relay(s) healthy</span>
 <span class="tl p" style="--i:8">PASS</span>  <span class="tl" style="--i:8">backup verified before the disaster: lnd itself decrypted the relay copy and found 2 channel(s) in it</span>
 <span class="tl" style="--i:9">alice: 298492032 sats on-chain + 1493060 sats in 2 channels</span>
@@ -518,17 +518,17 @@ html.rv-on .console.in .term .tl{opacity:1}
 <span class="tl h" style="--i:13">== RESTORE: new lnd from the seed alone, then pull backup from Nostr</span>
 <span class="tl p" style="--i:14">PASS</span>  <span class="tl" style="--i:14">same node identity from seed</span>
 <span class="tl p" style="--i:15">PASS</span>  <span class="tl" style="--i:15">same Nostr backup key re-derived from seed (no extra secret needed)</span>
-<span class="tl" style="--i:16">restored backup published at 2026-09-19T14:45:24.000Z</span>
+<span class="tl" style="--i:16">restored backup published at 2026-09-20T08:31:56.000Z</span>
 <span class="tl p" style="--i:17">PASS</span>  <span class="tl" style="--i:17">the restored backup has the channel-set fingerprint that was published</span>
 
 <span class="tl h" style="--i:18">== peers force-close (data-loss protection); mine until funds return</span>
 <span class="tl" style="--i:19">  block 0: on-chain 298492032 sats</span>
 <span class="tl" style="--i:20">recovered 1492866 of 1493060 channel sats on-chain</span>
-<span class="tl" style="--i:21">metrics: {"backupBytes":1811,"publishMs":10,"discoverMs":24,"importMs":85,"redialMs":15045,"exportMs":13,"encryptMs":5.53,"verifyMs":41,"relaysHealthy":2,"relaysAtRestore":1,"recoveryMs":24277,"totalMs":37894,"relaysOk":2,"relaysFailed":0,"feesSats":194}</span>
+<span class="tl" style="--i:21">metrics: {"backupBytes":1811,"publishMs":10,"discoverMs":32,"importMs":92,"redialMs":15060,"exportMs":15,"encryptMs":5.6,"verifyMs":32,"relaysHealthy":2,"relaysAtRestore":1,"recoveryMs":24226,"totalMs":39330,"relaysOk":2,"relaysFailed":0,"feesSats":194}</span>
 <span class="tl p" style="--i:22">PASS</span>  <span class="tl" style="--i:22">channel funds recovered (only fees lost)</span></pre>
         </div>
       </div>
-      <p class="fine rv">Regtest only: lnd 0.20.0-beta, bitcoind 30.0, two local relays, one of them switched off during the restore. The first run of this drill failed: lnd's own restore dials a peer once, and with two channels to the same peer that single attempt was torn down mid-handshake, so nobody force-closed. Lifeboat now stores peer hints inside the encrypted backup and keeps redialing after restore.</p>
+      <p class="fine rv">Regtest only: lnd 0.20.0-beta, bitcoind 30.0, two local relays, one of them switched off during the restore. The first run of this drill failed: lnd's own restore dials a peer once, and with two channels to the same peer that single attempt was torn down mid-handshake, so nobody force-closed. Lifeboat now stores peer hints inside the encrypted backup and keeps redialing after restore. In the recorded output, "from the seed alone" means the seed is the only secret needed; the drill still hands the restore the relay URLs, which are not derived from the seed.</p>
     </div>
   </section>
 

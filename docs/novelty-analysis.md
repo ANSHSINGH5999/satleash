@@ -25,7 +25,7 @@ Keep an LND node's static channel backup on Nostr relays, encrypted under a key 
 
 ## Combinations that appear uncommon
 
-1. **Seed-only identity + Nostr relays + SCB**: recovery needs nothing but the seed. Vendor services need an account; scripts need a cloud account or repository.
+1. **Seed-only identity + Nostr relays + SCB**: the seed is the only secret recovery needs (plus a known relay URL to find the backup). Vendor services need an account; scripts need a cloud account or repository.
 2. **Relay-copy verification against the live node**, per relay, with LND deciding what the blob contains.
 3. **A drill that is real** (LND wiped, restored, funds measured), presented next to the daily verification.
 

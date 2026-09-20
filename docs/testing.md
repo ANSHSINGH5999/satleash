@@ -8,7 +8,7 @@
 | Regtest e2e | `npm run e2e` | Real LND nodes, 46 checks: least-privilege macaroons confirmed by LND, monitor against a live node, live channel update, corrupted and foreign relay events, relay outage and recovery, wipe and restore with the restricted restore macaroon, the CLI `relay-test` command, relay management |
 | Drill | `npm run demo` | The disaster drill the landing page runs |
 
-`npm test` uses `--test-force-exit --test-timeout=30000` so a failing test cannot hang the run. The LND client tests need `openssl` to make throwaway certificates.
+`npm test` uses `--test-force-exit --test-timeout=120000` so a hung test cannot stall the run; the browser-test file alone takes about 45 s, and Node 22 applies the limit to the whole file, so 30000 cancelled it. The LND client tests need `openssl` to make throwaway certificates.
 
 ## Counts (2026-09-19)
 
@@ -20,4 +20,4 @@ The tests bind fixed loopback ports in the 7700 to 7900 range (test relays and s
 
 ## Not covered
 
-Public relay retention over days (only the one-shot relay test was run, see `public-relay-testing.md`), testnet/mainnet, browsers other than Chrome, LND versions other than 0.20, Core Lightning/LDK, multiple tabs against the same server beyond the SSE cap, and long soak runs. **LOCAL CI PASS only**: the commands the workflow runs (`npm ci`, `npm audit`, `npm run check`) pass locally. The GitHub Actions workflow has **not** been run on GitHub, so there is no REMOTE CI result.
+Public relay retention over days (only the one-shot relay test was run, see `public-relay-testing.md`), testnet/mainnet, browsers other than Chrome, LND versions other than 0.20, Core Lightning/LDK, multiple tabs against the same server beyond the SSE cap, and long soak runs. **LOCAL CI PASS**: the commands the workflow runs (`npm ci`, `npm audit`, `npm run check`) pass locally on Node 26.7.0 and Node 22.23.2 (161 / 161 tests; `npm run e2e` 46 / 46 on both). The first GitHub Actions run (commit `346215c`) was red on Node 22; the causes were fixed, and the workflow has **not yet been rerun** on GitHub, so there is no green REMOTE CI result.

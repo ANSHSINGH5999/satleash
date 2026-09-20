@@ -18,7 +18,7 @@ Frozen 2026-09-19. Nothing below is to be added or changed before submission exc
 | Nostr key derived from the seed through LND's signer | `keys.ts` | e2e (same key after a wipe), `keys.test.ts` |
 | Untrusted-relay validation and newest-usable-event selection | `nostr.ts` | `nostr.test.ts`, `hostile.test.ts`, e2e |
 | Verification: relay copy vs live node, per relay, lnd decrypts the copy | `backup.ts` (`verifyBackup`) | `verify.test.ts`, e2e (real LND) |
-| Restore from seed alone with peer redial | `backup.ts` (`restoreFromNostr`) | e2e, four drills |
+| Restore from the seed (plus a known relay) with peer redial | `backup.ts` (`restoreFromNostr`) | e2e, four drills |
 | Regtest disaster drill (two relays, one switched off, funds measured) | `demo.ts`, `regtest.ts`, `drill*.ts` | `npm run demo` (4 runs), UI rehearsal |
 | Landing page with the live drill | `web/index.html`, `web.ts` | `ui.test.ts`, UI rehearsal |
 | Least-privilege macaroons (`bake`), confirmed by LND | `cli.ts`, `lnd.ts` | e2e |

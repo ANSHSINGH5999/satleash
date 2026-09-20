@@ -1,6 +1,6 @@
 # Lifeboat
 
-**Lifeboat is a TypeScript daemon and console that lets a self-hosted LND operator recover channel funds from the 24-word seed with no other secret or file, by publishing encrypted static channel backups to Nostr relays and verifying them against the live node before they are needed.**
+**Lifeboat is a TypeScript daemon and console that lets a self-hosted LND operator recover channel funds from the 24-word seed and a known relay URL, with no other secret or key file, by publishing encrypted static channel backups to Nostr relays and verifying them against the live node before they are needed.**
 
 Built for BOSS Battle (Bitshala). Status: verified on regtest with real LND nodes; testnet and mainnet were not run. See [Limitations](#limitations).
 
@@ -12,11 +12,11 @@ An LND node's channel state lives on one machine. The static channel backup (SCB
 
 ## Solution
 
-A small daemon publishes every backup change to several Nostr relays as one encrypted, addressable event. The key that signs and encrypts it is derived from the wallet seed inside LND, so a node recreated from the same 24 words finds its own backup again. "Seed-only" means no other secret or file is needed; the backup itself lives on the relays. You still have to know the address of at least one relay that holds it: relay URLs are not derived from the seed, so keep them with the seed (they are not secret). A verification step checks the relay copy against the live node, and a drill wipes a regtest node and restores it for real.
+A small daemon publishes every backup change to several Nostr relays as one encrypted, addressable event. The key that signs and encrypts it is derived from the wallet seed inside LND, so a node recreated from the same 24 words finds its own backup again. "Seed-only" means the seed is the only secret required: no separate Lifeboat key, backup secret or key file. It is not the only input: the encrypted backup lives on the relays, so you also need the URL of at least one relay that still holds it. Relay URLs are not derived from the seed; keep them with the seed (they are not secret). A verification step checks the relay copy against the live node, and a drill wipes a regtest node and restores it for real.
 
 ## Why Lifeboat
 
-- **Recovery needs only the seed.** No cloud account, no vendor, no second secret.
+- **The seed is the only secret required.** No cloud account, no vendor, no second secret; a known relay URL locates the backup.
 - **Relays are untrusted.** Every event is re-validated locally; several relays are used; one can be gone.
 - **You can check before the disaster.** Verification asks LND itself to decrypt the relay copy and compares the channels inside with the node's, per relay.
 - **The restore is rehearsed on real LND nodes**, with measured time, sats and fees.
@@ -42,7 +42,7 @@ Backup payloads are encrypted before relay publication, and relay events are ind
 
 ## Recovery drill
 
-`npm run demo` (or the button on the landing page) creates a throwaway regtest network with two LND nodes and two relays, opens two channels, publishes the backup, verifies it, deletes the node, switches one relay off, restores from the seed and the relays and waits for funds. Latest verified run (2026-09-20, final local QA): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 36.4 s for the whole drill (23.9 s from wipe to funds back), with one of two relays switched off during the restore. The landing page's built-in "recorded run" is the 2026-09-19 one (37.9 s, 24.3 s). Timings vary per run (36.4 to 40.9 s so far); the page shows the numbers of the run you start. About 15 s of the recovery is a fixed redial schedule, not measured work. Details: [recovery](docs/recovery.md).
+`npm run demo` (or the button on the landing page) creates a throwaway regtest network with two LND nodes and two relays, opens two channels, publishes the backup, verifies it, deletes the node, switches one relay off, restores from the seed and the relays and waits for funds. Latest recorded run (2026-09-20, the output shown on the landing page): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, ~40 s total (39.33 s) and ~24 s from wipe to funds back (24.226 s), with one of two relays switched off during the restore. Timings vary per run (roughly 36 to 41 s observed) and are not a guarantee; the page shows the numbers of the run you start. About 15 s of the recovery is a fixed redial schedule, not measured work. Details: [recovery](docs/recovery.md).
 
 ## Features
 
@@ -66,7 +66,7 @@ TypeScript (Node 22+), LND 0.20 REST, `nostr-tools` (NIP-44, NIP-78), `@noble/cu
 
 | Needed for | Requirement |
 |---|---|
-| Everything | Node.js 22 or newer (developed on Node 26; 22 is expected to work but was not tested) and npm |
+| Everything | Node.js 22 or newer (developed on Node 26; Node 22.23.2 was validated locally, 161 / 161 tests and 46 / 46 e2e) and npm |
 | `npm run check` | Nothing else. No Docker, no network |
 | Browser tests inside `npm run check` | Chrome or Chromium in a usual location, or `CHROME_PATH`; without one those 13 tests are skipped |
 | `web` (live drill), `playground`, `demo`, `e2e` | Docker with a running daemon (Docker Desktop or the docker service). The first run pulls `polarlightning/lnd:0.20.0-beta` and `polarlightning/bitcoind:30.0` |
@@ -76,7 +76,7 @@ TypeScript (Node 22+), LND 0.20 REST, `nostr-tools` (NIP-44, NIP-78), `@noble/cu
 Without Docker, `npm run demo` and `npm run playground` stop within 15 s with one line, `prerequisite failed: Docker daemon: not reachable: start Docker Desktop or the docker service`; the landing page's drill button answers "Docker isn't running" (HTTP 503); `npm run demo:reset` says the containers were not touched. None of them hangs or prints a stack trace (tested).
 
 ```bash
-git clone [GitHub URL — TO BE ADDED] lifeboat && cd lifeboat
+git clone https://github.com/ANSHSINGH5999/lifeboat.git lifeboat && cd lifeboat
 npm install
 npm run check          # typecheck + 161 unit and browser tests
 ```
@@ -126,9 +126,11 @@ npm run e2e      # 46 checks against real LND nodes on regtest (Docker; 46 s on 
 npm audit        # 0 vulnerabilities on 2026-09-19
 ```
 
-CI is written (`.github/workflows/ci.yml`) but **has not been run on GitHub**: only the same commands were run locally. See [docs/testing.md](docs/testing.md).
+CI is written (`.github/workflows/ci.yml`). Node 22.23.2 has been locally validated with 161/161 tests and 46/46 e2e passing. GitHub Actions has not yet been rerun against the current fixes; the previous CI run (commit `346215c`) was red on Node 22. See [docs/testing.md](docs/testing.md).
 
 ## Regtest demo
+
+Live landing page: https://boss-battle-psi.vercel.app. It is a hosted static page that documents the project and shows a recorded run of the drill; its "Run recovery drill" button is disabled there. The recovery drill itself runs locally with Docker and a disposable regtest network, with no real funds; the hosted page does not provide an LND or recovery environment.
 
 `npm run web`, open `http://127.0.0.1:8080/`, press **Run recovery drill**. Script with timings: [docs/demo-script.md](docs/demo-script.md). The regtest network is disposable: `npm run demo:reset` clears it.
 

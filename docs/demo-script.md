@@ -24,7 +24,7 @@ For the optional live-node tour (Plan B below) use `npm run playground`, wait fo
 | 00:50 | "The backup daemon published every change to both relays, encrypted." | Terminal pane: `published: 1ch->2relay, 2ch->2relay`; fingerprint line |
 | 01:05 | "Before any disaster, verification: lnd itself decrypts the relay copy and finds both channels." | Pill **Backup verified by lnd before the wipe**; terminal `verify before the disaster: verified, 2 of 2 relay(s) healthy` |
 | 01:20 | "Now the disaster. The node is deleted completely, and one relay is switched off too." | Stage 04; terminal `alice is gone` and `relay … is switched off too` |
-| 01:35 | "A new node from the 24 words alone. Same identity, same Nostr key, same backup fingerprint." | Stage 05; pills **Same node identity**, **Same Nostr key**, **Restored backup has the published fingerprint** |
+| 01:35 | "A new node from the 24 words and a known relay. Same identity, same Nostr key, same backup fingerprint." | Stage 05; pills **Same node identity**, **Same Nostr key**, **Restored backup has the published fingerprint** |
 | 01:55 | "Funds are back on-chain." | Stage 06; read **sats before, sats after, fees, total time, relays reachable at restore** off the screen |
 | 02:15 | "The relays are not trusted: events are validated locally. The daemon runs read-only, LND confirms it cannot spend. The console is loopback-only with token, Host and Origin checks and a nonce CSP." | Scroll to **Security model** |
 | 02:35 | "Backup is not enough: Lifeboat checks the backup before you need it, and this drill shows the restore working. It is regtest, it closes channels, and peers must be online." | **Limits** section |

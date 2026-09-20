@@ -37,4 +37,4 @@ RestartSec=10
 
 ## Status
 
-Only the regtest tools have been exercised end to end. Treat any other network as untested. The CI workflow has not been run on GitHub.
+Only the regtest tools have been exercised end to end. Treat any other network as untested. The first GitHub Actions run was red on Node 22; the fixes are validated locally (Node 22.23.2 and 26.7.0) and the workflow has not yet been rerun.

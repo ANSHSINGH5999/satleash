@@ -29,7 +29,7 @@ Publish every backup change to Nostr relays as one encrypted event under a key d
 | Where | Typical | Lifeboat |
 |---|---|---|
 | Where the copy lives | one account, repository or vendor | several Nostr relays, any one enough |
-| What recovery needs | the file, an account, sometimes a second secret | the 24 words |
+| What recovery needs | the file, an account, sometimes a second secret | the 24 words (the only secret) and a known relay URL |
 | Trust in storage | full | none: author, signature, payload and channel set re-checked locally |
 | Knowing it works | trust the file | `verify`: authentic, LND-decryptable, matches the node, redundancy per relay |
 | Proof of restore | a manual procedure | an automated wipe-and-restore drill with measured time, sats and fees |

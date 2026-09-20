@@ -2,7 +2,7 @@
 
 ## One line
 
-Seed-only Lightning channel recovery over Nostr (no other secret or file needed): back up your LND channel state to relays, check it against your node, and rehearse the restore.
+Seed-only Lightning channel recovery over Nostr (the seed is the only secret; a known relay URL locates the backup): back up your LND channel state to relays, check it against your node, and rehearse the restore.
 
 ## Problem
 

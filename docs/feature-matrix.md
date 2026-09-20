@@ -6,7 +6,7 @@ Status legend: **verified** = exercised here by an automated test or a run this 
 |---|---|---|
 | Publish LND SCB as encrypted Nostr event on change | verified | e2e (live channel update), `backup.test.ts` |
 | Seed-derived backup key, same after wipe | verified | e2e, `keys.test.ts` |
-| Restore from seed alone with restricted macaroon | verified (regtest) | e2e, drill: 1,492,866 / 1,493,060 sats |
+| Restore from the seed (plus a known relay) with restricted macaroon | verified (regtest) | e2e, drill: 1,492,866 / 1,493,060 sats |
 | Verify (restore dry run), verdicts verified / degraded / failed | verified | `verify.test.ts`, e2e |
 | Per-relay health: healthy / stale / missing / down | verified | `verify.test.ts` |
 | Hostile / foreign / future-dated relay events | verified | `nostr.test.ts`, e2e |

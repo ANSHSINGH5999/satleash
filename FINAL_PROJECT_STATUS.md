@@ -1,14 +1,14 @@
 # Lifeboat: final project status
 
-Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was run in this environment (macOS, Node 26.7, Docker, headless Chrome, LND 0.20.0-beta, bitcoind 30.0 on regtest). Anything not run is listed as such. **Nothing is pushed, published, hosted or submitted; no Git remote is configured.**
+Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was run in this environment (macOS, Node 26.7, Docker, headless Chrome, LND 0.20.0-beta, bitcoind 30.0 on regtest). Anything not run is listed as such. **Published state (2026-09-20):** the repository is public on GitHub (`ANSHSINGH5999/lifeboat`, last pushed commit `346215c`) and the landing page is served statically from Vercel; the later fixes and documentation sync are not committed or pushed yet, and nothing has been submitted to Devfolio.
 
 ## LOCAL RELEASE FREEZE
 
-**Status: LOCAL RELEASE CANDIDATE — FROZEN (not published)**
+**Status: LOCAL RELEASE CANDIDATE — FROZEN** (repository and landing page published at `346215c`; later fixes uncommitted; not submitted to Devfolio)
 
 | Item | Status |
 |---|---|
-| Local commits | `92760ef` feat: freeze Lifeboat hackathon release candidate; `3d91ba3` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local, nothing pushed |
+| Local commits | `92760ef` feat: freeze Lifeboat hackathon release candidate; `3d91ba3` fix: do not share a verification that began before the latest publish; then a docs-only commit recording the clean-clone result (`git log`). All local at the time of the freeze (pushed to GitHub later, at `346215c`) |
 | Clean clone | **PASS** at `3d91ba3`: fresh `git clone` from the local repository, tree identical, `npm ci`, 159 / 159 tests, audit 0, e2e 44 / 44, README demo commands (`demo`, `playground`, `demo:check`, `demo:reset`) all worked. The first clone (of `92760ef`) had one flaky e2e check, fixed in `3d91ba3` |
 | Tests | `npm run check`: typecheck clean, **161 / 161** pass (22 files); 2026-09-20 after a fresh `npm ci` |
 | E2E | **46 / 46** real-LND checks (regtest, Docker) |
@@ -16,15 +16,15 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Browser | **Chrome verified** (headless, fresh profile, 0 console errors). Firefox and Safari **not tested**, no support claimed |
 | Public relay | **Partial**: one-shot dummy-event tests on 4 public relays (2 passed both runs, 1 intermittent, 1 timed out once) plus a read-only adversarial query; retention unmeasured. No further public testing was done in this phase |
 | Testnet | **NOT TESTED** |
-| Remote CI | **NOT RUN** (no remote; the workflow has only been run locally) |
-| Hosting | **NOT HOSTED**; no deployment configuration exists |
+| Remote CI | **First GitHub Actions run (commit `346215c`) was RED on Node 22; not yet rerun.** Causes: nostr-tools' default WebSocket overflows the stack on Node 22 when a relay connection fails; the browser-test file hit the 30 s test timeout; Chrome temp-dir cleanup race. Fixes are validated locally (Node 22.23.2 and 26.7.0), but GitHub Actions has not been rerun against them |
+| Hosting | Landing page (`web/index.html`) served statically from Vercel (`vercel.json`); the console and the live drill are local-only and are not hosted |
 | Devfolio | **NOT SUBMITTED** |
 
 Found and fixed in this phase: the `verifyNow` race above (found by the clean-clone e2e run); `demo:reset` waited on a hung `docker` for as long as it hung (now bounded to 15 s, and its logic is testable against a temporary directory); the LICENSE choice was left to the owner (`docs/license-decision.md` is a comparison table only). Checklist: `docs/local-release-checklist.md`.
 
 ## Final Local QA
 
-Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22 not tested), npm 11.19.0, Docker 29.5.2, `polarlightning/lnd:0.20.0-beta`, `polarlightning/bitcoind:30.0`, Chrome 153 (headless). Start state: branch `main`, commit `2031bff`, clean tree, no Git remote. Nothing was pushed, hosted, submitted or uploaded. Every number below was measured in this pass, not copied from earlier documents.
+Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22.23.2 added later in this pass, see the table), npm 11.19.0, Docker 29.5.2, `polarlightning/lnd:0.20.0-beta`, `polarlightning/bitcoind:30.0`, Chrome 153 (headless). Start state: branch `main`, commit `2031bff`, clean tree, no Git remote. Later in the pass the repository and the landing page were published at the owner's request (last pushed commit `346215c`); nothing was submitted to Devfolio. Every number below was measured in this pass, not copied from earlier documents.
 
 **Status: LOCAL RELEASE CANDIDATE, FROZEN.** No feature was added.
 
@@ -37,7 +37,7 @@ Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22 not tested), n
 | Build / lint | no such scripts exist (`npm run typecheck` is the compile check) | n/a |
 | `npm audit` | 0 vulnerabilities | VERIFIED |
 | `npm run e2e` (real LND 0.20 + bitcoind 30, regtest) | **46 PASS / 0 FAIL**, exit 0; 46 s in a clean clone with images pulled | VERIFIED |
-| Recovery drill, `npm run demo` from clean state | 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**; total **36.4 s**, wipe to funds back **23.9 s**; 2 relays accepted / 0 failed, 2 healthy before, **1 of 2 reachable at restore**; verification `verified`. Repeat in the clean clone: 36.4 s / 23.7 s, same sats and fees | VERIFIED |
+| Recovery drill, `npm run demo` from clean state | 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**; total **36.4 s**, wipe to funds back **23.9 s**; 2 relays accepted / 0 failed, 2 healthy before, **1 of 2 reachable at restore**; verification `verified`. Repeat in the clean clone: 36.4 s / 23.7 s, same sats and fees. Latest recorded `npm run demo` run (output shown on the landing page): total 39.33 s (`totalMs` 39330), wipe to funds back 24.226 s, backup 1,811 bytes, 2 relays accepted, 1 of 2 reachable at restore, same sats and fees | VERIFIED |
 | e2e disaster restore (3 channels, restricted restore macaroon only) | 1,739,326 of 1,739,590 sats recovered (264 sats fees) | VERIFIED |
 | README commands from scratch (`npm ci`, `check`, `web`, `playground`, `demo:check`, `playground:open`, `demo`, `demo:reset`, `e2e`) | all exist and worked; `demo:check` printed READY; reset left no containers, ports or `data/` behind | VERIFIED |
 | Clean local clone (`git clone` of the local repository, commit `2f20ae0`, not GitHub) | tracked files identical; `npm ci`, check 161 / 161, audit 0, e2e 46 / 46, `demo` PASS | VERIFIED |
@@ -45,11 +45,11 @@ Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22 not tested), n
 | Firefox, Safari | not run | NOT VERIFIED |
 | Public relays | one-shot dummy-event tests from 2026-09-19 only (nos.lol and relay.primal.net passed both runs; relay.damus.io intermittent; relay.nostr.band timed out once, not retried). No new public test in this pass. Retention, universal compatibility, reliability and censorship resistance are not claimed | PARTIALLY TESTED |
 | Testnet, signet, mainnet | guards unit-tested against a stubbed node only | NOT TESTED |
-| GitHub Actions | workflow never run remotely | NOT TESTED |
-| Node 22 | not run (README says "expected to work") | NOT TESTED |
+| GitHub Actions | first run (commit `346215c`) RED on Node 22; the fixes are validated locally; **not yet rerun on GitHub**. Do not read this as a passing remote CI | NOT YET GREEN |
+| Node 22 | Node 22.23.2 (obtained with `npx node@22`, not installed system-wide): `npm run check` **161 / 161** and `npm run e2e` **46 / 46** after the three fixes listed below; the same suite before them failed 7 tests and cancelled 1 file in the first GitHub run | VERIFIED locally |
 | Accessibility | see below | PARTIALLY TESTED |
 
-Drill against the benchmark (1,493,060 / 1,492,866 / 194 sats; 24.3 s wipe to funds; full drill 36.9 to 40.9 s): sats and fees are identical. Total 36.4 s and 36.4 s are 0.5 s below the lowest earlier run, and wipe-to-funds 23.9 s / 23.7 s is 0.4 to 0.6 s below 24.3 s. About 15 s of that is the fixed 5 x 3 s redial schedule, so the spread is run-to-run variation; no code was changed to reproduce or improve any number.
+Drill against the benchmark (1,493,060 / 1,492,866 / 194 sats; 24.3 s wipe to funds; full drill 36.9 to 40.9 s): sats and fees are identical. The latest recorded run was ~39.3 s total and ~24.2 s from wipe to recovered funds; timings vary between runs (the two earlier QA runs were 36.4 s / 23.9 s and 36.4 s / 23.7 s). None of these is a guaranteed figure. About 15 s of that is the fixed 5 x 3 s redial schedule, so the spread is run-to-run variation; no code was changed to reproduce or improve any number.
 
 ### Failure modes (each is an automated test, all passing above; A, H and the concurrent/relay cases also ran against real LND)
 
@@ -104,6 +104,7 @@ The landing hero button (`.hero-cta` in `web/index.html`) was white on `#e8702a`
 - `docs/competitive-analysis.md`: a ZEUS link that returned 404 replaced by the live page (read; it confirms the claim); an unverified Breez SDK row removed; link check recorded. The Phoenix link on Medium answered 403 to a script and was not opened by hand.
 - README, `docs/deployment.md`, Devfolio draft: added that restore needs the URL of at least one relay holding the backup (relay URLs are not derived from the seed, and Lifeboat has no default relay). README track section said "Submitted"; now "Intended track (not yet submitted)".
 - Benchmarks, public-relay wording, accessibility statements, e2e duration and the license line brought in line with the values above; commit hashes updated after the history was rewritten.
+- Node 22 fixes for the first GitHub Actions run (approved, protocol unchanged): `src/nostr.ts` gives `SimplePool` the `ws` WebSocket instead of Node 22's built-in one; `package.json` raises `--test-timeout` from 30000 to 120000 (the browser-test file legitimately takes about 45 s; failures still fail); `src/ui.test.ts` waits for Chrome to exit before removing its profile.
 
 ### Claims mapped to code
 
@@ -127,7 +128,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Clean install (fresh copy, `npm ci`, check, demo, reset) | passed |
 | Exact output of every command | `submission/test-results.md` |
 
-**LOCAL CI PASS:** the commands in `.github/workflows/ci.yml` pass locally. **REMOTE GITHUB CI:** NOT RUN (no remote is configured, nothing was pushed).
+**LOCAL CI PASS:** the commands in `.github/workflows/ci.yml` pass locally. **REMOTE GITHUB CI:** the first run (commit `346215c`) was red on Node 22; Node 22.23.2 has been locally validated with 161 / 161 tests and 46 / 46 e2e passing after the fixes, and GitHub Actions has not yet been rerun against them.
 
 ## B. Baseline
 
@@ -137,7 +138,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Real-LND e2e checks | 24 | 41 | **46** |
 | Recovery drill | 2 channels, 1 relay | same | 2 channels, **2 relays, one switched off during restore** |
 
-Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total 36.4 to 40.9 s across eleven runs (section G; the 36.4 s run is the final QA run).
+Recovery drill baseline: 1,493,060 sats in channels, 1,492,866 recovered, 194 sats fees, about 38 to 48 s. **Now:** identical sats and fees on every run; total roughly 36 to 41 s across recorded runs (section G; the latest recorded run is 39.33 s).
 
 ## C. Bugs fixed (each has a regression test)
 
@@ -215,7 +216,7 @@ Landing (new hero, fresh browser profile): DOM ready 337 ms including the Google
 
 ## P. Submission readiness
 
-Ready locally: README, docs (`docs/`), `submission/` package, Devfolio copy (`submission/devfolio-submission.md`), video script and checklist, ten screenshots (`screenshots/`), architecture diagram. Not done: license, repository, remote CI, video, Devfolio submission.
+Ready locally: README, docs (`docs/`), `submission/` package, Devfolio copy (`submission/devfolio-submission.md`), video script and checklist, ten screenshots (`screenshots/`), architecture diagram. Not done: a green remote CI run, video, Devfolio submission (license and repository now exist).
 
 ## Q. Known limitations
 
@@ -223,10 +224,10 @@ The landing hero button was below WCAG AA contrast (white on `#e8702a`, 3.1:1) a
 
 ## R. Exact next actions (need the owner)
 
-1. Choose a license (`docs/license-decision.md`), add `LICENSE` and the `package.json` field.
-2. Review the local commit history (`git log`); nothing has been pushed. Decide when and where to push.
-3. Create the repository; replace `[GitHub URL — TO BE ADDED]` in the README and `submission/devfolio-submission.md`.
-4. Let GitHub Actions run once and record the real result.
+1. Done: MIT license added (`LICENSE`, `package.json`).
+2. Commit the pending fixes and documentation sync, then decide when to push (origin is `https://github.com/ANSHSINGH5999/lifeboat.git`; its last pushed commit is `346215c`).
+3. Done: repository created, https://github.com/ANSHSINGH5999/lifeboat (public); its URL is in the README and `submission/devfolio-submission.md`. The landing page is hosted at https://boss-battle-psi.vercel.app; the recovery drill itself runs locally.
+4. Let GitHub Actions run again after the fixes are pushed and record the real result (the first run was red).
 5. Record the video (`docs/video-checklist.md`), upload it yourself, add the URL.
 6. Re-read the live BOSS Battle gallery for overlap; re-check numbers against your final take.
 7. Submit on Devfolio yourself.

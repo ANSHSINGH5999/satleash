@@ -12,7 +12,7 @@ Seed-only recovery for LND channel funds, over Nostr.
 
 ## Short description
 
-Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed, with no other secret or file. Demonstrated on regtest with real LND nodes.
+Lifeboat backs up a Lightning node's channel state to Nostr relays as encrypted events, checks that backup against the live node, and restores it from the 24-word seed and a known relay URL, with no other secret or key file. Demonstrated on regtest with real LND nodes.
 
 ## Problem
 
@@ -25,7 +25,7 @@ A small daemon publishes every backup change to several Nostr relays as one encr
 ## Key features
 
 - Automatic publication on every channel change, with a state machine, jittered retries and self-healing republish
-- Seed-only recovery: no account, no vendor, no second secret
+- The seed is the only secret required: no account, no vendor, no second secret (a known relay URL locates the backup)
 - Verification per relay (healthy, stale, missing, down) in which LND itself decrypts the relay copy and lists its channels
 - Untrusted-relay handling: every event re-validated locally, tested against a hostile scripted relay
 - Least-privilege macaroons confirmed by LND; mainnet refused by default
@@ -62,7 +62,7 @@ Lifeboat's differentiation is the combination: seed-only recovery, untrusted rel
 ## Demo instructions
 
 ```bash
-git clone [GitHub URL — TO BE ADDED] && cd lifeboat
+git clone https://github.com/ANSHSINGH5999/lifeboat.git && cd lifeboat
 npm install
 npm run check          # typecheck + tests
 npm run web            # open http://127.0.0.1:8080/ and press "Run recovery drill" (needs Docker)
@@ -89,11 +89,13 @@ Chunked backups for large nodes; a multi-week public-relay retention test; a tes
 
 ## Demo URL
 
-[Demo URL — NOT HOSTED] The demo runs locally (`npm run web`); nothing is deployed.
+Live landing page: https://boss-battle-psi.vercel.app. It is a hosted static page that documents the project and shows a recorded run of the drill (2026-09-20); it does not run the drill.
+
+Live recovery drill: **not hosted**. It runs locally with Docker and a disposable regtest network (`npm run web`, or `npm run demo` in a terminal), with no real funds. It is not a hosted or production recovery service, and nothing here is verified on testnet or mainnet.
 
 ## Repository
 
-[GitHub URL — TO BE ADDED] (no repository exists yet; waiting for the owner's approval)
+https://github.com/ANSHSINGH5999/lifeboat (public; MIT license)
 
 ## Video
 
@@ -101,5 +103,5 @@ Chunked backups for large nodes; a multi-week public-relay retention test; a tes
 
 ## Evidence (measured)
 
-- Recovery drill, 2026-09-20 (final local QA): 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, 36.4 s for the whole drill (23.9 s from wipe to funds back), with one of two relays switched off during the restore
+- Recovery drill, latest recorded run 2026-09-20: 1,492,866 of 1,493,060 channel sats recovered on-chain, 194 sats in fees, ~40 s total (39.33 s) and ~24 s from wipe to funds back (24.226 s), with one of two relays switched off during the restore; timings vary per run (roughly 36 to 41 s observed)
 - Tests: 161 unit, integration and browser tests pass; 46 real-LND end-to-end checks pass; `npm audit` reports 0 vulnerabilities

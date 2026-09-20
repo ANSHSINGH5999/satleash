@@ -197,3 +197,5 @@ Found by this run and fixed: `verify` and `pubkey` printed a log line on stdout 
 ## Not run
 
 Testnet and mainnet; Firefox and Safari; Node 22; GitHub Actions (the workflow has only been run locally, so there is no remote CI result).
+
+*Update 2026-09-20 (final QA, after the outputs above were recorded): Node 22.23.2 was validated locally with 161 / 161 tests and 46 / 46 e2e passing after three fixes; the first GitHub Actions run (commit `346215c`) was red on Node 22 and has not yet been rerun against the fixes.*

@@ -10,4 +10,4 @@ Rules: technically accurate, no unsupported claim, no security superlatives.
 
 ## Strongest candidate
 
-**#2, "Seed-only recovery for LND channel funds, over Nostr."** It names the user's stack (LND), the outcome (channel funds) and the mechanism (Nostr) in eight words, and every word is literally true of the implementation. #4 is more memorable but "rehearses" needs explaining; #1 is the landing headline; #3 is accurate but describes parts rather than the outcome; #5 implies "a few relays" without conditions. Chosen on clarity, not appeal.
+**#2, "Seed-only recovery for LND channel funds, over Nostr."** It names the user's stack (LND), the outcome (channel funds) and the mechanism (Nostr) in eight words, and every word is literally true of the implementation ("seed-only" means the seed is the only secret; a relay URL is still needed to find the backup). #4 is more memorable but "rehearses" needs explaining; #1 is the landing headline; #3 is accurate but describes parts rather than the outcome; #5 implies "a few relays" without conditions. Chosen on clarity, not appeal.
