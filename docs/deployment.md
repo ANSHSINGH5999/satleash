@@ -37,4 +37,4 @@ RestartSec=10
 
 ## Status
 
-Only the regtest tools have been exercised end to end. Treat any other network as untested. The first GitHub Actions run was red on Node 22; the fixes are validated locally (Node 22.23.2 and 26.7.0) and the workflow has not yet been rerun.
+Only the regtest tools have been exercised end to end. Treat any other network as untested. GitHub Actions (`npm ci`, `npm audit`, `npm run check` on Node 22) succeeded for commit `0cb7a92` (run 35503145035); the earlier runs were red and were fixed.

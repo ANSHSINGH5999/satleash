@@ -1,10 +1,10 @@
 # Lifeboat: final project status
 
-Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was run in this environment (macOS, Node 26.7, Docker, headless Chrome, LND 0.20.0-beta, bitcoind 30.0 on regtest). Anything not run is listed as such. **Published state (2026-09-20):** the repository is public on GitHub (`ANSHSINGH5999/lifeboat`, last pushed commit `346215c`) and the landing page is served statically from Vercel; the later fixes and documentation sync are not committed or pushed yet, and nothing has been submitted to Devfolio.
+Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was run in this environment (macOS, Node 26.7, Docker, headless Chrome, LND 0.20.0-beta, bitcoind 30.0 on regtest). Anything not run is listed as such. **Published state (2026-09-20):** the repository is public on GitHub (`ANSHSINGH5999/lifeboat`; GitHub Actions succeeded on commit `0cb7a92`, see the Remote CI row) and the landing page is served statically from Vercel; nothing has been submitted to Devfolio.
 
 ## LOCAL RELEASE FREEZE
 
-**Status: LOCAL RELEASE CANDIDATE — FROZEN** (repository and landing page published at `346215c`; later fixes uncommitted; not submitted to Devfolio)
+**Status: LOCAL RELEASE CANDIDATE — FROZEN** (repository and landing page published; GitHub Actions succeeded at `0cb7a92`; not submitted to Devfolio)
 
 | Item | Status |
 |---|---|
@@ -16,7 +16,7 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Browser | **Chrome verified** (headless, fresh profile, 0 console errors). Firefox and Safari **not tested**, no support claimed |
 | Public relay | **Partial**: one-shot dummy-event tests on 4 public relays (2 passed both runs, 1 intermittent, 1 timed out once) plus a read-only adversarial query; retention unmeasured. No further public testing was done in this phase |
 | Testnet | **NOT TESTED** |
-| Remote CI | **First GitHub Actions run (commit `346215c`) was RED on Node 22; not yet rerun.** Causes: nostr-tools' default WebSocket overflows the stack on Node 22 when a relay connection fails; the browser-test file hit the 30 s test timeout; Chrome temp-dir cleanup race. Fixes are validated locally (Node 22.23.2 and 26.7.0), but GitHub Actions has not been rerun against them |
+| Remote CI | **GitHub Actions succeeded on commit `0cb7a92`** (run 35503145035, Node 22.23.2: `npm ci`, `npm audit`, `npm run check`; 161 / 161 tests, 0 vulnerabilities). Earlier runs were red: `346215c` (7 tests failed and 1 file was cancelled: nostr-tools' default WebSocket overflows the stack on Node 22 when a relay connection fails; the browser-test file hit the 30 s test timeout; Chrome temp-dir cleanup race) and `0127152` (one landing test compared `scrollWidth` with `innerWidth`, which reads -15 with Linux Chrome's 15 px scrollbar). All fixed. `npm run e2e` is not part of the workflow (it needs Docker); it passed locally, 46 / 46 |
 | Hosting | Landing page (`web/index.html`) served statically from Vercel (`vercel.json`); the console and the live drill are local-only and are not hosted |
 | Devfolio | **NOT SUBMITTED** |
 
@@ -24,7 +24,7 @@ Found and fixed in this phase: the `verifyNow` race above (found by the clean-cl
 
 ## Final Local QA
 
-Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22.23.2 added later in this pass, see the table), npm 11.19.0, Docker 29.5.2, `polarlightning/lnd:0.20.0-beta`, `polarlightning/bitcoind:30.0`, Chrome 153 (headless). Start state: branch `main`, commit `2031bff`, clean tree, no Git remote. Later in the pass the repository and the landing page were published at the owner's request (last pushed commit `346215c`); nothing was submitted to Devfolio. Every number below was measured in this pass, not copied from earlier documents.
+Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22.23.2 added later in this pass, see the table), npm 11.19.0, Docker 29.5.2, `polarlightning/lnd:0.20.0-beta`, `polarlightning/bitcoind:30.0`, Chrome 153 (headless). Start state: branch `main`, commit `2031bff`, clean tree, no Git remote. Later in the pass the repository and the landing page were published at the owner's request (first pushed commit `346215c`); nothing was submitted to Devfolio. Every number below was measured in this pass, not copied from earlier documents.
 
 **Status: LOCAL RELEASE CANDIDATE, FROZEN.** No feature was added.
 
@@ -45,7 +45,7 @@ Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22.23.2 added lat
 | Firefox, Safari | not run | NOT VERIFIED |
 | Public relays | one-shot dummy-event tests from 2026-09-19 only (nos.lol and relay.primal.net passed both runs; relay.damus.io intermittent; relay.nostr.band timed out once, not retried). No new public test in this pass. Retention, universal compatibility, reliability and censorship resistance are not claimed | PARTIALLY TESTED |
 | Testnet, signet, mainnet | guards unit-tested against a stubbed node only | NOT TESTED |
-| GitHub Actions | first run (commit `346215c`) RED on Node 22; the fixes are validated locally; **not yet rerun on GitHub**. Do not read this as a passing remote CI | NOT YET GREEN |
+| GitHub Actions | run 35503145035 on commit `0cb7a92`: success (Node 22.23.2; 161 / 161 tests, audit 0). Earlier runs on `346215c` and `0127152` were red and were fixed | VERIFIED on GitHub |
 | Node 22 | Node 22.23.2 (obtained with `npx node@22`, not installed system-wide): `npm run check` **161 / 161** and `npm run e2e` **46 / 46** after the three fixes listed below; the same suite before them failed 7 tests and cancelled 1 file in the first GitHub run | VERIFIED locally |
 | Accessibility | see below | PARTIALLY TESTED |
 
@@ -128,7 +128,7 @@ Feature-frozen (`docs/feature-freeze.md`) and submission-ready as a package, pen
 | Clean install (fresh copy, `npm ci`, check, demo, reset) | passed |
 | Exact output of every command | `submission/test-results.md` |
 
-**LOCAL CI PASS:** the commands in `.github/workflows/ci.yml` pass locally. **REMOTE GITHUB CI:** the first run (commit `346215c`) was red on Node 22; Node 22.23.2 has been locally validated with 161 / 161 tests and 46 / 46 e2e passing after the fixes, and GitHub Actions has not yet been rerun against them.
+**LOCAL CI PASS:** the commands in `.github/workflows/ci.yml` pass locally. **REMOTE GITHUB CI:** run 35503145035 on `0cb7a92` succeeded (Node 22.23.2, 161 / 161 tests); the earlier runs on `346215c` and `0127152` were red and were fixed. The e2e suite is not part of the workflow; it passed locally, 46 / 46.
 
 ## B. Baseline
 
@@ -225,9 +225,9 @@ The landing hero button was below WCAG AA contrast (white on `#e8702a`, 3.1:1) a
 ## R. Exact next actions (need the owner)
 
 1. Done: MIT license added (`LICENSE`, `package.json`).
-2. Commit the pending fixes and documentation sync, then decide when to push (origin is `https://github.com/ANSHSINGH5999/lifeboat.git`; its last pushed commit is `346215c`).
+2. Done: the fixes were committed and pushed (origin is `https://github.com/ANSHSINGH5999/lifeboat.git`; CI verified at `0cb7a92`).
 3. Done: repository created, https://github.com/ANSHSINGH5999/lifeboat (public); its URL is in the README and `submission/devfolio-submission.md`. The landing page is hosted at https://boss-battle-psi.vercel.app; the recovery drill itself runs locally.
-4. Let GitHub Actions run again after the fixes are pushed and record the real result (the first run was red).
+4. Done: GitHub Actions run 35503145035 on `0cb7a92` succeeded (the earlier runs were red). Re-check it after any later commit.
 5. Record the video (`docs/video-checklist.md`), upload it yourself, add the URL.
 6. Re-read the live BOSS Battle gallery for overlap; re-check numbers against your final take.
 7. Submit on Devfolio yourself.

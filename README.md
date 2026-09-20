@@ -126,7 +126,7 @@ npm run e2e      # 46 checks against real LND nodes on regtest (Docker; 46 s on 
 npm audit        # 0 vulnerabilities on 2026-09-19
 ```
 
-CI is written (`.github/workflows/ci.yml`). Node 22.23.2 has been locally validated with 161/161 tests and 46/46 e2e passing. GitHub Actions has not yet been rerun against the current fixes; the previous CI run (commit `346215c`) was red on Node 22. See [docs/testing.md](docs/testing.md).
+CI is written (`.github/workflows/ci.yml`): `npm ci`, `npm audit` and `npm run check` on Node 22. The run on commit `0cb7a92` (run 35503145035, Node 22.23.2) succeeded: 161/161 tests, 0 vulnerabilities. Earlier runs (commits `346215c` and `0127152`) were red and were fixed. `npm run e2e` needs Docker and is not part of the workflow; it passed locally, 46/46, on Node 22.23.2 and 26.7.0. See [docs/testing.md](docs/testing.md).
 
 ## Regtest demo
 
