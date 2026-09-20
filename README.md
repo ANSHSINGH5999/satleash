@@ -122,7 +122,7 @@ The CLI prints a command's result on stdout (`verify` prints pure JSON, `pubkey`
 
 ```bash
 npm run check    # typecheck + 161 tests (no Docker)
-npm run e2e      # 46 checks against real LND nodes on regtest (Docker, a few minutes)
+npm run e2e      # 46 checks against real LND nodes on regtest (Docker; 46 s on the QA machine with the images already pulled, longer the first time)
 npm audit        # 0 vulnerabilities on 2026-09-19
 ```
 

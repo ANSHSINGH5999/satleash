@@ -4,7 +4,7 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 
 ## LOCAL RELEASE FREEZE
 
-**Status: READY FOR PUBLICATION — NOT PUBLISHED**
+**Status: LOCAL RELEASE CANDIDATE — FROZEN (not published)**
 
 | Item | Status |
 |---|---|
@@ -21,6 +21,97 @@ Snapshot 2026-09-19, release-frozen locally 2026-09-20. "Verified" means it was 
 | Devfolio | **NOT SUBMITTED** |
 
 Found and fixed in this phase: the `verifyNow` race above (found by the clean-clone e2e run); `demo:reset` waited on a hung `docker` for as long as it hung (now bounded to 15 s, and its logic is testable against a temporary directory); the LICENSE choice was left to the owner (`docs/license-decision.md` is a comparison table only). Checklist: `docs/local-release-checklist.md`.
+
+## Final Local QA
+
+Date: 2026-09-20. Environment: macOS 26.6.2, Node 26.7.0 (Node 22 not tested), npm 11.19.0, Docker 29.5.2, `polarlightning/lnd:0.20.0-beta`, `polarlightning/bitcoind:30.0`, Chrome 153 (headless). Start state: branch `main`, commit `2031bff`, clean tree, no Git remote. Nothing was pushed, hosted, submitted or uploaded. Every number below was measured in this pass, not copied from earlier documents.
+
+**Status: LOCAL RELEASE CANDIDATE, FROZEN.** No feature was added.
+
+### Results
+
+| Area | Result | Label |
+|---|---|---|
+| `npm ci` (fresh `node_modules`), then `npm run check` | typecheck clean; **161 / 161** tests pass, 0 skipped (Chrome present, so the 13 browser tests ran), 44 s | VERIFIED |
+| `npm test` | the test half of `npm run check`; identical result | VERIFIED |
+| Build / lint | no such scripts exist (`npm run typecheck` is the compile check) | n/a |
+| `npm audit` | 0 vulnerabilities | VERIFIED |
+| `npm run e2e` (real LND 0.20 + bitcoind 30, regtest) | **46 PASS / 0 FAIL**, exit 0; 46 s in a clean clone with images pulled | VERIFIED |
+| Recovery drill, `npm run demo` from clean state | 1,493,060 sats in 2 channels, **1,492,866 recovered, 194 sats fees**; total **36.4 s**, wipe to funds back **23.9 s**; 2 relays accepted / 0 failed, 2 healthy before, **1 of 2 reachable at restore**; verification `verified`. Repeat in the clean clone: 36.4 s / 23.7 s, same sats and fees | VERIFIED |
+| e2e disaster restore (3 channels, restricted restore macaroon only) | 1,739,326 of 1,739,590 sats recovered (264 sats fees) | VERIFIED |
+| README commands from scratch (`npm ci`, `check`, `web`, `playground`, `demo:check`, `playground:open`, `demo`, `demo:reset`, `e2e`) | all exist and worked; `demo:check` printed READY; reset left no containers, ports or `data/` behind | VERIFIED |
+| Clean local clone (`git clone` of the local repository, commit `2f20ae0`, not GitHub) | tracked files identical; `npm ci`, check 161 / 161, audit 0, e2e 46 / 46, `demo` PASS | VERIFIED |
+| Chrome | 161-test suite incl. 13 headless-Chrome tests, 0 skipped | VERIFIED |
+| Firefox, Safari | not run | NOT VERIFIED |
+| Public relays | one-shot dummy-event tests from 2026-09-19 only (nos.lol and relay.primal.net passed both runs; relay.damus.io intermittent; relay.nostr.band timed out once, not retried). No new public test in this pass. Retention, universal compatibility, reliability and censorship resistance are not claimed | PARTIALLY TESTED |
+| Testnet, signet, mainnet | guards unit-tested against a stubbed node only | NOT TESTED |
+| GitHub Actions | workflow never run remotely | NOT TESTED |
+| Node 22 | not run (README says "expected to work") | NOT TESTED |
+| Accessibility | see below | PARTIALLY TESTED |
+
+Drill against the benchmark (1,493,060 / 1,492,866 / 194 sats; 24.3 s wipe to funds; full drill 36.9 to 40.9 s): sats and fees are identical. Total 36.4 s and 36.4 s are 0.5 s below the lowest earlier run, and wipe-to-funds 23.9 s / 23.7 s is 0.4 to 0.6 s below 24.3 s. About 15 s of that is the fixed 5 x 3 s redial schedule, so the spread is run-to-run variation; no code was changed to reproduce or improve any number.
+
+### Failure modes (each is an automated test, all passing above; A, H and the concurrent/relay cases also ran against real LND)
+
+| | Case | Expected | Actual | Evidence | |
+|---|---|---|---|---|---|
+| A | One relay unavailable | Verification still passes via the other, redundancy flagged DEGRADED, publish reaches the survivor, recovery on return | As expected | e2e "relay outage"; drill restores with 1 of 2 relays | PASS |
+| B | Several relays unavailable | Backup still found on any live relay; all down fails promptly with a clear message | As expected | `hostile.test.ts` (multiple / all relays down) | PASS |
+| C | Malformed relay event or frame | Dropped and counted, no crash or stall | As expected | `hostile.test.ts` (garbage frames, `null`, wrong types) | PASS |
+| D | Foreign event (other author, kind or `d` tag) | Never selected; verification unaffected | As expected | `hostile.test.ts`, `nostr.test.ts`, e2e "hostile and broken relay content" | PASS |
+| E | Invalid signature (tampered after signing) | Rejected by local validation | As expected | `hostile.test.ts` (forged, extra-field and bad-id events), `nostr.test.ts` | PASS |
+| F | Stale event | Loses to a newer valid one | As expected | `nostr.test.ts` (newest wins, ties by id) | PASS |
+| G | Future-dated event | Never shadows a current backup; used and flagged only if it is the only one | As expected | `nostr.test.ts`, `verify.test.ts`, `hostile.test.ts` | PASS |
+| H | LND unavailable | Dashboard shows FAILED, monitor reconnects and re-verifies on its own | As expected | e2e "lnd outage and recovery"; `monitor.test.ts` | PASS |
+| I | LND timeout | Request fails after the limit instead of hanging; idle stream is not killed | As expected | `lnd.test.ts` (timeout, slow-but-timely, cut-off body, idle stream) | PASS |
+| J | Concurrent drill request | Exactly one drill starts, the second is refused with 409 | As expected | `web.test.ts` | PASS |
+| K | Browser disconnect | Client slot freed, dead connections pruned, drill continues | As expected | `sse.test.ts`, `web.test.ts` | PASS |
+| L | SSE reconnect | Late client gets the run replayed; console shows a banner when the server is lost and clears it on return | As expected | `web.test.ts`, `ui.test.ts` | PASS |
+
+### Security recheck
+
+Code read: `nostr.ts`, `keys.ts`, `payload.ts`, `log.ts`, `web.ts`, `lnd.ts`, `config.ts`, `demo-env.ts`. Result: **no security defect found; nothing changed in `src/` except a test assertion.**
+
+| Control | Where | Evidence |
+|---|---|---|
+| TLS pinning | `lnd.ts` `opts()`: `ca` is the node's own certificate, `servername` fixed | `lnd.test.ts` (a different certificate is refused) |
+| Least-privilege macaroon | `MONITOR_PERMS`, `RESTORE_PERMS`; `canSpendOnchain()` asks LND | e2e: monitor macaroon cannot send, bake or create addresses |
+| Token comparison | `web.ts` `sameToken`: length check, then `timingSafeEqual`; POSTs without it get 403 | `web.test.ts`; live check: POST without token 403 |
+| Host / Origin validation | `web.ts`: exact `host:port` for 127.0.0.1 or localhost; Origin must equal the Host | `web.test.ts`; live check: foreign Host 403 |
+| Nonce CSP and headers | `web.ts` `csp()`, per-response nonce, `nosniff`, `no-referrer`, `DENY` | `web.test.ts`, `ui.test.ts`; live response headers inspected |
+| Relay author, kind, `d` tag, signature, payload | `nostr.ts` `isOwnValid` (never throws), `payload.ts` `decodePayload` | `hostile.test.ts`, `nostr.test.ts`, `payload.test.ts` |
+| Channel-set fingerprint | `payload.ts` `channelSetHash`; LND's `VerifyChanBackup` decides what a relay copy contains | `payload.test.ts`, `verify.test.ts`, e2e |
+| Reset path and filesystem safety | `demo-env.ts` `wipeDataDir`: only `<repo>/data`, links unlinked not followed; the only other deletes are `data/alice` | `demo-env.test.ts` |
+| Secret redaction | `log.ts` `redact` by key name and blob length | `log.test.ts` |
+| XSS | text-only rendering of hostile strings | `ui.test.ts` |
+
+Secret search over all 105 tracked text files for PRIVATE KEY, BEGIN, SEED, MNEMONIC, MACAROON, PASSWORD, SECRET, TOKEN, CREDENTIAL and for long hex or base64 literals: no PEM blocks and no real credentials. Hits are code identifiers, documentation, a regtest wallet password (`password12345`) and regtest RPC credentials (`lb`/`lb`) that are published on 127.0.0.1 only, and two public hex fixtures in tests (a Nostr public key and a transaction id). Screenshots were read: throwaway regtest data only, public keys and fingerprints, no macaroon, seed or personal data.
+
+Residual, already documented: the console token is readable by any local process; relay metadata (key, timing, size, IP) is visible to relays.
+
+### Network safety
+
+Mainnet is refused unless `LIFEBOAT_ALLOW_MAINNET=1` (`config.ts` `assertNetworkAllowed`, `config.test.ts`, `monitor.test.ts`); `LIFEBOAT_NETWORK` refuses a node on any other network; the console shows REGTEST / TESTNET / MAINNET labels. The demo uses a fresh disposable regtest network under `<repo>/data` and fake coins. No production node, mainnet or testnet node was contacted. The only outside network use in this pass was fetching the URLs listed in `docs/competitive-analysis.md`.
+
+### Accessibility
+
+The landing hero button (`.hero-cta` in `web/index.html`) was white on `#e8702a`, 3.1 : 1. **Fixed:** text is now `#111827` (5.73 : 1 at rest, 4.62 : 1 on hover; the orange is unchanged); `ui.test.ts` asserts both states and `01-landing.png` was re-captured. Only the listed colour pairs are measured. No full WCAG audit, screen-reader test or keyboard walk-through of the landing page was done, and **no WCAG conformance is claimed**.
+
+### Changes made in this pass
+
+- `web/index.html`, `src/ui.test.ts`: hero button contrast (above); the contrast test title no longer says "every text colour meets WCAG AA".
+- `screenshots/01-landing.png` re-captured from the running app (the only stale screenshot).
+- `docs/competitive-analysis.md`: a ZEUS link that returned 404 replaced by the live page (read; it confirms the claim); an unverified Breez SDK row removed; link check recorded. The Phoenix link on Medium answered 403 to a script and was not opened by hand.
+- README, `docs/deployment.md`, Devfolio draft: added that restore needs the URL of at least one relay holding the backup (relay URLs are not derived from the seed, and Lifeboat has no default relay). README track section said "Submitted"; now "Intended track (not yet submitted)".
+- Benchmarks, public-relay wording, accessibility statements, e2e duration and the license line brought in line with the values above; commit hashes updated after the history was rewritten.
+
+### Claims mapped to code
+
+Seed-derived Nostr identity: `keys.ts` `deriveNostrKey`. No extra recovery secret: same key returns after a wipe (e2e, drill). NIP-44 encrypted backup: `nostr.ts` `publishBackup`. Untrusted relays and local validation: `isOwnValid`, `pickNewestDecryptable`. Channel-set fingerprint: `payload.ts` `channelSetHash`. Live-node verification: `lnd.ts` `verifyBackup`, `backup.ts` `verifyBackup`. Peer hints and redial: `lnd.ts` `channelPeerHints`, `backup.ts` restore loop (5 rounds of 3 s). Least-privilege macaroon: `lnd.ts` permission lists, `canSpendOnchain`, `cli.ts bake`. Real LND drill: `demo.ts`, `e2e.ts`. Each claim in `docs/technical-story.md` that was checked (60 s verify interval, 5 s / 15 s / 60 s / 5 min retry with jitter, state list, +600 s future skew) matches the code.
+
+### Remaining issues
+
+None that block the local release candidate. Known and documented: restore closes channels and needs peers online; about 200 channels per backup; LND only (0.20); regtest only; public relay retention unmeasured; Chrome only; the console token is readable by local processes; fonts are loaded from Google.
 
 ## A. Current status
 
