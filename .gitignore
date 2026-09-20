@@ -9,3 +9,4 @@ data/
 *.cert
 .DS_Store
 !.env.example
+.vercel
